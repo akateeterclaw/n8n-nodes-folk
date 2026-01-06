@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-folk",
-    "version": "0.1.1-1",
+    "version": "0.1.1",
     "description": "n8n community node for Folk CRM - manage people, companies, deals, notes, reminders, and more",
     "license": "MIT",
     "homepage": "https://folk.app",
