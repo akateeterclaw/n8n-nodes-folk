@@ -26,19 +26,6 @@ export const updateDescription: INodeProperties[] = [
 		displayOptions,
 		options: [
 			{
-				displayName: 'Name',
-				name: 'name',
-				type: 'string',
-				default: '',
-				description: 'Name of the company',
-				routing: {
-					send: {
-						type: 'body',
-						property: 'name',
-					},
-				},
-			},
-			{
 				displayName: 'Description',
 				name: 'description',
 				type: 'string',
@@ -61,13 +48,13 @@ export const updateDescription: INodeProperties[] = [
 				default: '1-10',
 				options: [
 					{ name: '1-10', value: '1-10' },
-					{ name: '11-50', value: '11-50' },
-					{ name: '51-200', value: '51-200' },
-					{ name: '201-500', value: '201-500' },
-					{ name: '501-1000', value: '501-1000' },
-					{ name: '1001-5000', value: '1001-5000' },
-					{ name: '5001-10000', value: '5001-10000' },
 					{ name: '10000+', value: '10000+' },
+					{ name: '1001-5000', value: '1001-5000' },
+					{ name: '11-50', value: '11-50' },
+					{ name: '201-500', value: '201-500' },
+					{ name: '5001-10000', value: '5001-10000' },
+					{ name: '501-1000', value: '501-1000' },
+					{ name: '51-200', value: '51-200' },
 				],
 				description: 'Number of employees',
 				routing: {
@@ -101,6 +88,19 @@ export const updateDescription: INodeProperties[] = [
 					send: {
 						type: 'body',
 						property: 'industry',
+					},
+				},
+			},
+			{
+				displayName: 'Name',
+				name: 'name',
+				type: 'string',
+				default: '',
+				description: 'Name of the company',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'name',
 					},
 				},
 			},

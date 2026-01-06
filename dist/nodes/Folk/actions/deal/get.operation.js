@@ -9,25 +9,25 @@ const displayOptions = {
 };
 exports.getDescription = [
     {
-        displayName: 'Group',
+        displayName: 'Group Name or ID',
         name: 'groupId',
         type: 'options',
         required: true,
         default: '',
         displayOptions,
-        description: 'The group containing the deal',
+        description: 'The group containing the deal. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
         typeOptions: {
             loadOptionsMethod: 'getGroups',
         },
     },
     {
-        displayName: 'Object Type',
+        displayName: 'Object Type Name or ID',
         name: 'objectType',
         type: 'options',
         required: true,
         default: '',
         displayOptions,
-        description: 'The custom object type for deals in this group',
+        description: 'The custom object type for deals in this group. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
         typeOptions: {
             loadOptionsMethod: 'getGroupObjectTypes',
             loadOptionsDependsOn: ['groupId'],

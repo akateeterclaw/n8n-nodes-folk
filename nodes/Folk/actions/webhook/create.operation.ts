@@ -61,40 +61,40 @@ export const createDescription: INodeProperties[] = [
 						default: 'person.created',
 						options: [
 							{
-								name: 'Person Created',
-								value: 'person.created',
-							},
-							{
-								name: 'Person Updated',
-								value: 'person.updated',
-							},
-							{
-								name: 'Person Deleted',
-								value: 'person.deleted',
-							},
-							{
 								name: 'Company Created',
 								value: 'company.created',
-							},
-							{
-								name: 'Company Updated',
-								value: 'company.updated',
 							},
 							{
 								name: 'Company Deleted',
 								value: 'company.deleted',
 							},
 							{
+								name: 'Company Updated',
+								value: 'company.updated',
+							},
+							{
 								name: 'Object Created',
 								value: 'object.created',
+							},
+							{
+								name: 'Object Deleted',
+								value: 'object.deleted',
 							},
 							{
 								name: 'Object Updated',
 								value: 'object.updated',
 							},
 							{
-								name: 'Object Deleted',
-								value: 'object.deleted',
+								name: 'Person Created',
+								value: 'person.created',
+							},
+							{
+								name: 'Person Deleted',
+								value: 'person.deleted',
+							},
+							{
+								name: 'Person Updated',
+								value: 'person.updated',
 							},
 						],
 					},

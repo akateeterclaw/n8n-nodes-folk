@@ -11,7 +11,7 @@ async function folkApiRequest(method, endpoint, body) {
     if (body) {
         options.body = body;
     }
-    return await this.helpers.requestWithAuthentication.call(this, 'folkApi', options);
+    return await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', options);
 }
 class FolkTrigger {
     constructor() {
@@ -90,6 +90,7 @@ class FolkTrigger {
                     ],
                 },
             ],
+            usableAsTool: true,
         };
         this.webhookMethods = {
             default: {
@@ -131,7 +132,7 @@ class FolkTrigger {
                         try {
                             await folkApiRequest.call(this, 'DELETE', `/v1/webhooks/${webhookData.webhookId}`);
                         }
-                        catch (error) {
+                        catch {
                             return false;
                         }
                         delete webhookData.webhookId;

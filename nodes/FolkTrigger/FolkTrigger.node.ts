@@ -1,6 +1,8 @@
 import type {
 	IDataObject,
 	IHookFunctions,
+	IHttpRequestMethods,
+	IHttpRequestOptions,
 	INodeType,
 	INodeTypeDescription,
 	IWebhookFunctions,
@@ -18,11 +20,11 @@ interface FolkWebhook {
 
 async function folkApiRequest(
 	this: IHookFunctions | IWebhookFunctions,
-	method: string,
+	method: IHttpRequestMethods,
 	endpoint: string,
 	body?: IDataObject,
 ): Promise<IDataObject> {
-	const options: IDataObject = {
+	const options: IHttpRequestOptions = {
 		method,
 		url: `https://api.folk.app${endpoint}`,
 		json: true,
@@ -32,7 +34,7 @@ async function folkApiRequest(
 		options.body = body;
 	}
 
-	return await this.helpers.requestWithAuthentication.call(this, 'folkApi', options);
+	return await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', options);
 }
 
 export class FolkTrigger implements INodeType {
@@ -111,6 +113,7 @@ export class FolkTrigger implements INodeType {
 				],
 			},
 		],
+		usableAsTool: true,
 	};
 
 	webhookMethods = {
@@ -174,7 +177,7 @@ export class FolkTrigger implements INodeType {
 							'DELETE',
 							`/v1/webhooks/${webhookData.webhookId}`,
 						);
-					} catch (error) {
+					} catch {
 						// Webhook may have been deleted manually, ignore error
 						return false;
 					}

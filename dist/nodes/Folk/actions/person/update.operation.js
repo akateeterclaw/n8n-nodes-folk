@@ -26,32 +26,6 @@ exports.updateDescription = [
         displayOptions,
         options: [
             {
-                displayName: 'First Name',
-                name: 'firstName',
-                type: 'string',
-                default: '',
-                description: 'First name of the person',
-                routing: {
-                    send: {
-                        type: 'body',
-                        property: 'firstName',
-                    },
-                },
-            },
-            {
-                displayName: 'Last Name',
-                name: 'lastName',
-                type: 'string',
-                default: '',
-                description: 'Last name of the person',
-                routing: {
-                    send: {
-                        type: 'body',
-                        property: 'lastName',
-                    },
-                },
-            },
-            {
                 displayName: 'Birthday',
                 name: 'birthday',
                 type: 'dateTime',
@@ -82,6 +56,19 @@ exports.updateDescription = [
                 },
             },
             {
+                displayName: 'First Name',
+                name: 'firstName',
+                type: 'string',
+                default: '',
+                description: 'First name of the person',
+                routing: {
+                    send: {
+                        type: 'body',
+                        property: 'firstName',
+                    },
+                },
+            },
+            {
                 displayName: 'Job Title',
                 name: 'jobTitle',
                 type: 'string',
@@ -91,6 +78,19 @@ exports.updateDescription = [
                     send: {
                         type: 'body',
                         property: 'jobTitle',
+                    },
+                },
+            },
+            {
+                displayName: 'Last Name',
+                name: 'lastName',
+                type: 'string',
+                default: '',
+                description: 'Last name of the person',
+                routing: {
+                    send: {
+                        type: 'body',
+                        property: 'lastName',
                     },
                 },
             },

@@ -5,11 +5,10 @@ exports.getGroupObjectTypes = getGroupObjectTypes;
 exports.getUsers = getUsers;
 async function getGroups() {
     var _a;
-    const response = await this.helpers.requestWithAuthentication.call(this, 'folkApi', {
+    const response = await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
         method: 'GET',
         url: 'https://api.folk.app/v1/groups',
         qs: { limit: 100 },
-        json: true,
     });
     const groups = ((_a = response.data) === null || _a === void 0 ? void 0 : _a.items) || [];
     return groups.map((group) => ({
@@ -23,10 +22,9 @@ async function getGroupObjectTypes() {
     if (!groupId) {
         return [];
     }
-    const response = await this.helpers.requestWithAuthentication.call(this, 'folkApi', {
+    const response = await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
         method: 'GET',
         url: `https://api.folk.app/v1/groups/${groupId}/customFields`,
-        json: true,
     });
     const customFields = ((_a = response.data) === null || _a === void 0 ? void 0 : _a.items) || [];
     return customFields
@@ -38,11 +36,10 @@ async function getGroupObjectTypes() {
 }
 async function getUsers() {
     var _a;
-    const response = await this.helpers.requestWithAuthentication.call(this, 'folkApi', {
+    const response = await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
         method: 'GET',
         url: 'https://api.folk.app/v1/users',
         qs: { limit: 100 },
-        json: true,
     });
     const users = ((_a = response.data) === null || _a === void 0 ? void 0 : _a.items) || [];
     return users.map((user) => ({

@@ -44,7 +44,7 @@ exports.updateDescription = [
                 type: 'string',
                 default: '',
                 placeholder: 'FREQ=DAILY;INTERVAL=1',
-                description: 'iCalendar RFC 5545 recurrence rule',
+                description: 'ICalendar RFC 5545 recurrence rule',
                 routing: {
                     send: {
                         type: 'body',

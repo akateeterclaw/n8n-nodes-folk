@@ -46,7 +46,7 @@ exports.createDescription = [
         default: '',
         displayOptions,
         placeholder: 'FREQ=DAILY;INTERVAL=1',
-        description: 'iCalendar RFC 5545 recurrence rule (e.g., FREQ=DAILY;INTERVAL=1)',
+        description: 'ICalendar RFC 5545 recurrence rule (e.g., FREQ=DAILY;INTERVAL=1)',
         routing: {
             send: {
                 type: 'body',

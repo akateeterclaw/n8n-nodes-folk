@@ -6,14 +6,13 @@ import type {
 export async function getGroups(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
-	const response = await this.helpers.requestWithAuthentication.call(
+	const response = await this.helpers.httpRequestWithAuthentication.call(
 		this,
 		'folkApi',
 		{
 			method: 'GET',
 			url: 'https://api.folk.app/v1/groups',
 			qs: { limit: 100 },
-			json: true,
 		},
 	);
 
@@ -33,13 +32,12 @@ export async function getGroupObjectTypes(
 		return [];
 	}
 
-	const response = await this.helpers.requestWithAuthentication.call(
+	const response = await this.helpers.httpRequestWithAuthentication.call(
 		this,
 		'folkApi',
 		{
 			method: 'GET',
 			url: `https://api.folk.app/v1/groups/${groupId}/customFields`,
-			json: true,
 		},
 	);
 
@@ -55,14 +53,13 @@ export async function getGroupObjectTypes(
 export async function getUsers(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
-	const response = await this.helpers.requestWithAuthentication.call(
+	const response = await this.helpers.httpRequestWithAuthentication.call(
 		this,
 		'folkApi',
 		{
 			method: 'GET',
 			url: 'https://api.folk.app/v1/users',
 			qs: { limit: 100 },
-			json: true,
 		},
 	);
 
