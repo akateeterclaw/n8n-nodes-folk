@@ -1,0 +1,21 @@
+{
+    "node": "n8n-nodes-folk.folk",
+    "nodeVersion": "1.0",
+    "codexVersion": "1.0",
+    "categories": ["Sales"],
+    "subcategories": {
+        "Sales": ["CRM"]
+    },
+    "resources": {
+        "credentialDocumentation": [
+            {
+                "url": "https://developer.folk.app/guides/quick-start"
+            }
+        ],
+        "primaryDocumentation": [
+            {
+                "url": "https://developer.folk.app/api-reference"
+            }
+        ]
+    }
+}
