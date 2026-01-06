@@ -49,6 +49,7 @@ export const createDescription: INodeProperties[] = [
 		required: true,
 		default: {},
 		displayOptions,
+		description: 'Events to subscribe to (1-20 events)',
 		options: [
 			{
 				displayName: 'Event',
@@ -98,6 +99,13 @@ export const createDescription: INodeProperties[] = [
 							},
 						],
 					},
+					{
+						displayName: 'Filter (JSON)',
+						name: 'filter',
+						type: 'json',
+						default: '',
+						description: 'Optional filter for this event. Format depends on event type. Example: {"groupId": "grp_xxx", "path": ["status"], "value": "won"}',
+					},
 				],
 			},
 		],
@@ -105,7 +113,7 @@ export const createDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'subscribedEvents',
-				value: '={{ $value.eventValues?.map(e => ({ eventType: e.eventType })) || [] }}',
+				value: '={{ $value.eventValues?.map(e => { const event = { eventType: e.eventType }; if (e.filter) { event.filter = typeof e.filter === "string" ? JSON.parse(e.filter) : e.filter; } return event; }) || [] }}',
 			},
 		},
 	},

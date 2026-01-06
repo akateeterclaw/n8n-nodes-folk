@@ -55,12 +55,37 @@ export const createDescription: INodeProperties[] = [
 		},
 	},
 	{
+		displayName: 'Type Mode',
+		name: 'typeMode',
+		type: 'options',
+		required: true,
+		default: 'predefined',
+		displayOptions,
+		description: 'Use a predefined type or a custom emoji',
+		options: [
+			{
+				name: 'Predefined Type',
+				value: 'predefined',
+			},
+			{
+				name: 'Custom Emoji',
+				value: 'custom',
+			},
+		],
+	},
+	{
 		displayName: 'Type',
 		name: 'type',
 		type: 'options',
 		required: true,
 		default: 'meeting',
-		displayOptions,
+		displayOptions: {
+			show: {
+				resource: ['interaction'],
+				operation: ['create'],
+				typeMode: ['predefined'],
+			},
+		},
 		description: 'The type of interaction',
 		options: [
 			{
@@ -144,6 +169,28 @@ export const createDescription: INodeProperties[] = [
 				value: 'whatsapp',
 			},
 		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'type',
+			},
+		},
+	},
+	{
+		displayName: 'Custom Emoji',
+		name: 'customEmoji',
+		type: 'string',
+		required: true,
+		default: '',
+		displayOptions: {
+			show: {
+				resource: ['interaction'],
+				operation: ['create'],
+				typeMode: ['custom'],
+			},
+		},
+		placeholder: '🎉',
+		description: 'A single emoji to use as the interaction type',
 		routing: {
 			send: {
 				type: 'body',

@@ -50,6 +50,19 @@ export const createDescription: INodeProperties[] = [
 		displayOptions,
 		options: [
 			{
+				displayName: 'Parent Note ID',
+				name: 'parentNoteId',
+				type: 'string',
+				default: '',
+				description: 'The ID of the parent note (for creating reply/threaded notes)',
+				routing: {
+					send: {
+						type: 'body',
+						property: 'parentNote.id',
+					},
+				},
+			},
+			{
 				displayName: 'Visibility',
 				name: 'visibility',
 				type: 'options',

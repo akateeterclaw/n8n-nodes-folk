@@ -85,6 +85,19 @@ exports.createDescription = [
                 },
             },
             {
+                displayName: 'Funding Raised',
+                name: 'fundingRaised',
+                type: 'number',
+                default: 0,
+                description: 'Total funding raised in USD',
+                routing: {
+                    send: {
+                        type: 'body',
+                        property: 'fundingRaised',
+                    },
+                },
+            },
+            {
                 displayName: 'Industry',
                 name: 'industry',
                 type: 'string',
@@ -94,6 +107,20 @@ exports.createDescription = [
                     send: {
                         type: 'body',
                         property: 'industry',
+                    },
+                },
+            },
+            {
+                displayName: 'Last Funding Date',
+                name: 'lastFundingDate',
+                type: 'dateTime',
+                default: '',
+                description: 'Date of the last funding round (YYYY-MM-DD format)',
+                routing: {
+                    send: {
+                        type: 'body',
+                        property: 'lastFundingDate',
+                        value: '={{ $value ? $value.split("T")[0] : undefined }}',
                     },
                 },
             },
@@ -192,6 +219,87 @@ exports.createDescription = [
                 type: 'body',
                 property: 'urls',
                 value: '={{ $value.urlValues?.map(u => u.url) || [] }}',
+            },
+        },
+    },
+    {
+        displayName: 'Groups',
+        name: 'groups',
+        type: 'fixedCollection',
+        typeOptions: {
+            multipleValues: true,
+        },
+        default: {},
+        displayOptions,
+        description: 'Groups to add the company to (max 100)',
+        options: [
+            {
+                displayName: 'Group',
+                name: 'groupValues',
+                values: [
+                    {
+                        displayName: 'Group ID',
+                        name: 'id',
+                        type: 'string',
+                        default: '',
+                        description: 'The ID of the group to add this company to',
+                    },
+                ],
+            },
+        ],
+        routing: {
+            send: {
+                type: 'body',
+                property: 'groups',
+                value: '={{ $value.groupValues?.map(g => ({ id: g.id })) || [] }}',
+            },
+        },
+    },
+    {
+        displayName: 'Addresses',
+        name: 'addresses',
+        type: 'fixedCollection',
+        typeOptions: {
+            multipleValues: true,
+        },
+        default: {},
+        displayOptions,
+        description: 'Addresses associated with this company (max 20)',
+        options: [
+            {
+                displayName: 'Address',
+                name: 'addressValues',
+                values: [
+                    {
+                        displayName: 'Address',
+                        name: 'address',
+                        type: 'string',
+                        default: '',
+                        description: 'Physical address',
+                    },
+                ],
+            },
+        ],
+        routing: {
+            send: {
+                type: 'body',
+                property: 'addresses',
+                value: '={{ $value.addressValues?.map(a => a.address) || [] }}',
+            },
+        },
+    },
+    {
+        displayName: 'Custom Field Values',
+        name: 'customFieldValues',
+        type: 'json',
+        default: '{}',
+        displayOptions,
+        description: 'Custom field values grouped by group ID. Format: { "groupId": { "fieldName": "value" } }',
+        routing: {
+            send: {
+                type: 'body',
+                property: 'customFieldValues',
+                value: '={{ $value ? (typeof $value === "string" ? JSON.parse($value) : $value) : undefined }}',
             },
         },
     },

@@ -76,16 +76,51 @@ export const updateDescription: INodeProperties[] = [
 				},
 			},
 			{
-				displayName: 'Assigned User IDs',
+				displayName: 'Assigned Users',
 				name: 'assignedUsers',
-				type: 'string',
-				default: '',
-				description: 'Comma-separated list of user IDs to assign to this reminder',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				description: 'Users to notify when the reminder is triggered (1-50 users)',
+				options: [
+					{
+						displayName: 'User',
+						name: 'userValues',
+						values: [
+							{
+								displayName: 'Identifier Type',
+								name: 'identifierType',
+								type: 'options',
+								options: [
+									{
+										name: 'User ID',
+										value: 'id',
+									},
+									{
+										name: 'Email',
+										value: 'email',
+									},
+								],
+								default: 'id',
+								description: 'Whether to identify user by ID or email',
+							},
+							{
+								displayName: 'Value',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'The user ID or email address',
+							},
+						],
+					},
+				],
 				routing: {
 					send: {
 						type: 'body',
 						property: 'assignedUsers',
-						value: '={{ $value ? $value.split(",").map(id => ({ id: id.trim() })) : [] }}',
+						value: '={{ $value.userValues?.map(u => u.identifierType === "email" ? { email: u.value } : { id: u.value }) || [] }}',
 					},
 				},
 			},

@@ -23,7 +23,7 @@ exports.descriptions = [
                 routing: {
                     request: {
                         method: 'GET',
-                        url: '=/v1/groups/{{ $parameter.groupId }}/customFields',
+                        url: '=/v1/groups/{{ $parameter.groupId }}/custom-fields/{{ $parameter.entityType }}',
                     },
                 },
             },
