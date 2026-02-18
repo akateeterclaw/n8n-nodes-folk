@@ -1,8 +1,10 @@
 import type { INodeProperties } from 'n8n-workflow';
+
 import { createDescription } from './create.operation';
 import { deleteDescription } from './delete.operation';
 import { getDescription } from './get.operation';
 import { getManyDescription } from './getMany.operation';
+import { searchDescription } from './search.operation';
 import { updateDescription } from './update.operation';
 
 const displayOnlyForPerson = {
@@ -64,6 +66,17 @@ export const descriptions: INodeProperties[] = [
 				},
 			},
 			{
+				name: 'Search',
+				value: 'search',
+				action: 'Search people',
+				routing: {
+					request: {
+						method: 'GET',
+						url: '/v1/people',
+					},
+				},
+			},
+			{
 				name: 'Update',
 				value: 'update',
 				action: 'Update a person',
@@ -81,5 +94,6 @@ export const descriptions: INodeProperties[] = [
 	...deleteDescription,
 	...getDescription,
 	...getManyDescription,
+	...searchDescription,
 	...updateDescription,
 ];
