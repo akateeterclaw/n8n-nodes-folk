@@ -5,6 +5,7 @@ const create_operation_1 = require("./create.operation");
 const delete_operation_1 = require("./delete.operation");
 const get_operation_1 = require("./get.operation");
 const getMany_operation_1 = require("./getMany.operation");
+const search_operation_1 = require("./search.operation");
 const update_operation_1 = require("./update.operation");
 const displayOnlyForPerson = {
     show: {
@@ -64,6 +65,17 @@ exports.descriptions = [
                 },
             },
             {
+                name: 'Search',
+                value: 'search',
+                action: 'Search people',
+                routing: {
+                    request: {
+                        method: 'GET',
+                        url: '/v1/people',
+                    },
+                },
+            },
+            {
                 name: 'Update',
                 value: 'update',
                 action: 'Update a person',
@@ -81,6 +93,7 @@ exports.descriptions = [
     ...delete_operation_1.deleteDescription,
     ...get_operation_1.getDescription,
     ...getMany_operation_1.getManyDescription,
+    ...search_operation_1.searchDescription,
     ...update_operation_1.updateDescription,
 ];
 //# sourceMappingURL=index.js.map
