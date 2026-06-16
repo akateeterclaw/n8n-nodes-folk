@@ -7,29 +7,6 @@ const displayOptions = {
         operation: ['search'],
     },
 };
-const groupOperatorsWithIds = ['all', 'in', 'not_in'];
-async function addGroupFilterQuery(requestOptions) {
-    var _a;
-    const operator = this.getNodeParameter('groupFilterOperator', 'none');
-    if (operator === 'none') {
-        return requestOptions;
-    }
-    const qs = ((_a = requestOptions.qs) !== null && _a !== void 0 ? _a : {});
-    if (groupOperatorsWithIds.includes(operator)) {
-        const groupIdsParameter = this.getNodeParameter('groupIds', []);
-        const groupIds = (Array.isArray(groupIdsParameter)
-            ? groupIdsParameter
-            : [groupIdsParameter]).filter((groupId) => groupId);
-        if (groupIds.length > 0) {
-            qs[`filter[groups][${operator}][id]`] = groupIds;
-        }
-    }
-    else {
-        qs[`filter[groups][${operator}]`] = '';
-    }
-    requestOptions.qs = qs;
-    return requestOptions;
-}
 exports.searchDescription = [
     {
         displayName: 'Emails',
@@ -87,7 +64,7 @@ exports.searchDescription = [
     },
     {
         displayName: 'Group ID',
-        name: 'groupIds',
+        name: 'groupIdsAll',
         type: 'string',
         default: [],
         placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
@@ -96,13 +73,111 @@ exports.searchDescription = [
             show: {
                 resource: ['person'],
                 operation: ['search'],
-                groupFilterOperator: ['all', 'in', 'not_in'],
+                groupFilterOperator: ['all'],
             },
         },
-        description: 'One or more group IDs to filter by. Supports n8n expressions.',
+        description: 'One or more group IDs to search for. Adds filter[groups][all][ID] query parameters.',
         typeOptions: {
             multipleValues: true,
             multipleValueButtonText: 'Add Group ID',
+        },
+        routing: {
+            send: {
+                type: 'query',
+                property: 'filter[groups][all][id]',
+            },
+        },
+    },
+    {
+        displayName: 'Group ID',
+        name: 'groupIdsIn',
+        type: 'string',
+        default: [],
+        placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
+        required: true,
+        displayOptions: {
+            show: {
+                resource: ['person'],
+                operation: ['search'],
+                groupFilterOperator: ['in'],
+            },
+        },
+        description: 'One or more group IDs to search for. Adds filter[groups][in][ID] query parameters.',
+        typeOptions: {
+            multipleValues: true,
+            multipleValueButtonText: 'Add Group ID',
+        },
+        routing: {
+            send: {
+                type: 'query',
+                property: 'filter[groups][in][id]',
+            },
+        },
+    },
+    {
+        displayName: 'Group ID',
+        name: 'groupIdsNotIn',
+        type: 'string',
+        default: [],
+        placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
+        required: true,
+        displayOptions: {
+            show: {
+                resource: ['person'],
+                operation: ['search'],
+                groupFilterOperator: ['not_in'],
+            },
+        },
+        description: 'One or more group IDs to search for. Adds filter[groups][not_in][ID] query parameters.',
+        typeOptions: {
+            multipleValues: true,
+            multipleValueButtonText: 'Add Group ID',
+        },
+        routing: {
+            send: {
+                type: 'query',
+                property: 'filter[groups][not_in][id]',
+            },
+        },
+    },
+    {
+        displayName: 'Group Empty Filter',
+        name: 'groupEmpty',
+        type: 'boolean',
+        default: true,
+        displayOptions: {
+            show: {
+                resource: ['person'],
+                operation: ['search'],
+                groupFilterOperator: ['empty'],
+            },
+        },
+        description: 'Whether to filter for people without groups',
+        routing: {
+            send: {
+                type: 'query',
+                property: 'filter[groups][empty]',
+            },
+        },
+    },
+    {
+        displayName: 'Group Not Empty Filter',
+        name: 'groupNotEmpty',
+        type: 'boolean',
+        default: true,
+        displayOptions: {
+            show: {
+                resource: ['person'],
+                operation: ['search'],
+                groupFilterOperator: ['not_empty'],
+            },
+        },
+        description: 'Whether to filter for people with groups',
+        routing: {
+            send: {
+                type: 'query',
+                property: 'filter[groups][not_empty]',
+            },
         },
     },
     {
@@ -120,7 +195,6 @@ exports.searchDescription = [
             send: {
                 type: 'query',
                 property: 'combinator',
-                preSend: [addGroupFilterQuery],
             },
         },
     },
