@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.descriptions = void 0;
+const addToGroups_operation_1 = require("./addToGroups.operation");
 const create_operation_1 = require("./create.operation");
 const delete_operation_1 = require("./delete.operation");
 const get_operation_1 = require("./get.operation");
@@ -20,6 +21,17 @@ exports.descriptions = [
         noDataExpression: true,
         displayOptions: displayOnlyForPerson,
         options: [
+            {
+                name: 'Add to Groups',
+                value: 'addToGroups',
+                action: 'Add a person to groups',
+                routing: {
+                    request: {
+                        method: 'PATCH',
+                        url: '=/v1/people/{{ $parameter.personId }}',
+                    },
+                },
+            },
             {
                 name: 'Create',
                 value: 'create',
@@ -89,6 +101,7 @@ exports.descriptions = [
         ],
         default: 'getMany',
     },
+    ...addToGroups_operation_1.addToGroupsDescription,
     ...create_operation_1.createDescription,
     ...delete_operation_1.deleteDescription,
     ...get_operation_1.getDescription,
