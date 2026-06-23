@@ -184,7 +184,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Groups to add the person to (max 100)',
+        description: 'Groups to set for this person (replaces existing, max 100)',
         options: [
             {
                 displayName: 'Group',
@@ -195,7 +195,7 @@ exports.updateDescription = [
                         name: 'id',
                         type: 'string',
                         default: '',
-                        description: 'The ID of the group to add this person to',
+                        description: 'The ID of the group to set for this person',
                     },
                 ],
             },
