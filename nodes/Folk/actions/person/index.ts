@@ -1,5 +1,6 @@
 import type { INodeProperties } from 'n8n-workflow';
 
+import { addToGroupsDescription } from './addToGroups.operation';
 import { createDescription } from './create.operation';
 import { deleteDescription } from './delete.operation';
 import { getDescription } from './get.operation';
@@ -21,6 +22,17 @@ export const descriptions: INodeProperties[] = [
 		noDataExpression: true,
 		displayOptions: displayOnlyForPerson,
 		options: [
+			{
+				name: 'Add to Groups',
+				value: 'addToGroups',
+				action: 'Add a person to groups',
+				routing: {
+					request: {
+						method: 'PATCH',
+						url: '=/v1/people/{{ $parameter.personId }}',
+					},
+				},
+			},
 			{
 				name: 'Create',
 				value: 'create',
@@ -90,6 +102,7 @@ export const descriptions: INodeProperties[] = [
 		],
 		default: 'getMany',
 	},
+	...addToGroupsDescription,
 	...createDescription,
 	...deleteDescription,
 	...getDescription,
