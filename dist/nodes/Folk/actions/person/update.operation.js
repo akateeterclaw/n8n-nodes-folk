@@ -57,10 +57,9 @@ function mergeCustomFieldValues(existing, updates) {
     return mergedValues;
 }
 async function applyListUpdateMode(requestOptions, property) {
-    var _a, _b, _c;
+    var _a, _b;
     const body = ((_a = requestOptions.body) !== null && _a !== void 0 ? _a : {});
-    const updateFields = this.getNodeParameter('updateFields');
-    const updateMode = ((_b = updateFields[`${property}UpdateMode`]) !== null && _b !== void 0 ? _b : 'overwrite');
+    const updateMode = this.getNodeParameter('updateMode');
     if (updateMode !== 'update' || !(property in body)) {
         requestOptions.body = body;
         return requestOptions;
@@ -70,7 +69,7 @@ async function applyListUpdateMode(requestOptions, property) {
         method: 'GET',
         url: `https://api.folk.app/v1/people/${personId}`,
     }));
-    const person = (_c = response.data) !== null && _c !== void 0 ? _c : {};
+    const person = (_b = response.data) !== null && _b !== void 0 ? _b : {};
     if (property === 'groups') {
         body[property] = mergeGroupValues(person[property], body[property]);
     }
@@ -116,6 +115,18 @@ exports.updateDescription = [
         required: true,
         displayOptions,
         description: 'The ID of the person to update',
+    },
+    {
+        displayName: 'Update Mode',
+        name: 'updateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether list values replace or are added to existing values',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Update Fields',
@@ -208,17 +219,6 @@ exports.updateDescription = [
                 },
             },
             {
-                displayName: 'Emails Update Mode',
-                name: 'emailsUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered emails replace or are added to existing emails',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
-            },
-            {
                 displayName: 'Emails',
                 name: 'emails',
                 type: 'fixedCollection',
@@ -250,17 +250,6 @@ exports.updateDescription = [
                         preSend: [mergeEmails],
                     },
                 },
-            },
-            {
-                displayName: 'Phones Update Mode',
-                name: 'phonesUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered phones replace or are added to existing phones',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
             },
             {
                 displayName: 'Phones',
@@ -296,17 +285,6 @@ exports.updateDescription = [
                 },
             },
             {
-                displayName: 'Groups Update Mode',
-                name: 'groupsUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered groups replace or are added to existing groups',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
-            },
-            {
                 displayName: 'Groups',
                 name: 'groups',
                 type: 'fixedCollection',
@@ -338,17 +316,6 @@ exports.updateDescription = [
                         preSend: [mergeGroups],
                     },
                 },
-            },
-            {
-                displayName: 'Companies Update Mode',
-                name: 'companiesUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered companies replace or are added to existing companies',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
             },
             {
                 displayName: 'Companies',
@@ -391,17 +358,6 @@ exports.updateDescription = [
                 },
             },
             {
-                displayName: 'Addresses Update Mode',
-                name: 'addressesUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered addresses replace or are added to existing addresses',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
-            },
-            {
                 displayName: 'Addresses',
                 name: 'addresses',
                 type: 'fixedCollection',
@@ -435,17 +391,6 @@ exports.updateDescription = [
                 },
             },
             {
-                displayName: 'URLs Update Mode',
-                name: 'urlsUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered URLs replace or are added to existing URLs',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
-            },
-            {
                 displayName: 'URLs',
                 name: 'urls',
                 type: 'fixedCollection',
@@ -477,17 +422,6 @@ exports.updateDescription = [
                         preSend: [mergeUrls],
                     },
                 },
-            },
-            {
-                displayName: 'Custom Field Values Update Mode',
-                name: 'customFieldValuesUpdateMode',
-                type: 'options',
-                default: 'overwrite',
-                description: 'Whether entered custom field values replace or are merged with existing values',
-                options: [
-                    { name: 'Overwrite', value: 'overwrite' },
-                    { name: 'Update', value: 'update' },
-                ],
             },
             {
                 displayName: 'Custom Field Values',
