@@ -9,15 +9,15 @@ const displayOptions = {
 };
 function mergePrimitiveValues(existing, updates) {
     const values = [
-        ...(Array.isArray(existing) ? existing : []),
         ...(Array.isArray(updates) ? updates : []),
+        ...(Array.isArray(existing) ? existing : []),
     ].filter((value) => typeof value === 'string' && value.length > 0);
     return [...new Set(values)];
 }
 function mergeGroupValues(existing, updates) {
     const values = [
-        ...(Array.isArray(existing) ? existing : []),
         ...(Array.isArray(updates) ? updates : []),
+        ...(Array.isArray(existing) ? existing : []),
     ].filter((value) => typeof value === 'object' && value !== null);
     const valuesByKey = new Map();
     for (const value of values) {
@@ -29,8 +29,8 @@ function mergeGroupValues(existing, updates) {
 }
 function mergeCompanyValues(existing, updates) {
     const values = [
-        ...(Array.isArray(existing) ? existing : []),
         ...(Array.isArray(updates) ? updates : []),
+        ...(Array.isArray(existing) ? existing : []),
     ].filter((value) => typeof value === 'object' && value !== null);
     const valuesByKey = new Map();
     for (const value of values) {
