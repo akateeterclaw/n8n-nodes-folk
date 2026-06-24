@@ -82,8 +82,7 @@ async function applyListUpdateMode(
 	property: 'addresses' | 'companies' | 'customFieldValues' | 'emails' | 'groups' | 'phones' | 'urls',
 ): Promise<IHttpRequestOptions> {
 	const body = (requestOptions.body ?? {}) as IDataObject;
-	const updateFields = this.getNodeParameter('updateFields') as IDataObject;
-	const updateMode = (updateFields[`${property}UpdateMode`] ?? 'overwrite') as UpdateMode;
+	const updateMode = this.getNodeParameter('updateMode') as UpdateMode;
 
 	if (updateMode !== 'update' || !(property in body)) {
 		requestOptions.body = body;
@@ -175,13 +174,25 @@ export const updateDescription: INodeProperties[] = [
 		description: 'The ID of the person to update',
 	},
 	{
+		displayName: 'Update Mode',
+		name: 'updateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether list values replace or are added to existing values',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
+	},
+	{
 		displayName: 'Update Fields',
 		name: 'updateFields',
 		type: 'collection',
 		placeholder: 'Add Field',
 		default: {},
 		displayOptions,
-		// Keep each list field beside its update mode so the two controls are easy to add together.
+		// Keep the common scalar fields first, followed by the list fields.
 		// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
 		options: [
 			{
@@ -266,17 +277,6 @@ export const updateDescription: INodeProperties[] = [
 					},
 				},
 			},
-		{
-		displayName: 'Emails Update Mode',
-		name: 'emailsUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered emails replace or are added to existing emails',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
-	},
 	{
 		displayName: 'Emails',
 		name: 'emails',
@@ -309,17 +309,6 @@ export const updateDescription: INodeProperties[] = [
 				preSend: [mergeEmails],
 			},
 		},
-	},
-	{
-		displayName: 'Phones Update Mode',
-		name: 'phonesUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered phones replace or are added to existing phones',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
 	},
 	{
 		displayName: 'Phones',
@@ -355,17 +344,6 @@ export const updateDescription: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Groups Update Mode',
-		name: 'groupsUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered groups replace or are added to existing groups',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
-	},
-	{
 		displayName: 'Groups',
 		name: 'groups',
 		type: 'fixedCollection',
@@ -397,17 +375,6 @@ export const updateDescription: INodeProperties[] = [
 				preSend: [mergeGroups],
 			},
 		},
-	},
-	{
-		displayName: 'Companies Update Mode',
-		name: 'companiesUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered companies replace or are added to existing companies',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
 	},
 	{
 		displayName: 'Companies',
@@ -450,17 +417,6 @@ export const updateDescription: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Addresses Update Mode',
-		name: 'addressesUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered addresses replace or are added to existing addresses',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
-	},
-	{
 		displayName: 'Addresses',
 		name: 'addresses',
 		type: 'fixedCollection',
@@ -494,17 +450,6 @@ export const updateDescription: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'URLs Update Mode',
-		name: 'urlsUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered URLs replace or are added to existing URLs',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
-	},
-	{
 		displayName: 'URLs',
 		name: 'urls',
 		type: 'fixedCollection',
@@ -536,17 +481,6 @@ export const updateDescription: INodeProperties[] = [
 				preSend: [mergeUrls],
 			},
 		},
-	},
-	{
-		displayName: 'Custom Field Values Update Mode',
-		name: 'customFieldValuesUpdateMode',
-		type: 'options',
-		default: 'overwrite',
-		description: 'Whether entered custom field values replace or are merged with existing values',
-		options: [
-			{ name: 'Overwrite', value: 'overwrite' },
-			{ name: 'Update', value: 'update' },
-		],
 	},
 	{
 		displayName: 'Custom Field Values',
