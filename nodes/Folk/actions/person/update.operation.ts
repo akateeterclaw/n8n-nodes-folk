@@ -82,7 +82,8 @@ async function applyListUpdateMode(
 	property: 'addresses' | 'companies' | 'customFieldValues' | 'emails' | 'groups' | 'phones' | 'urls',
 ): Promise<IHttpRequestOptions> {
 	const body = (requestOptions.body ?? {}) as IDataObject;
-	const updateMode = this.getNodeParameter(`${property}UpdateMode`) as UpdateMode;
+	const updateFields = this.getNodeParameter('updateFields') as IDataObject;
+	const updateMode = (updateFields[`${property}UpdateMode`] ?? 'overwrite') as UpdateMode;
 
 	if (updateMode !== 'update' || !(property in body)) {
 		requestOptions.body = body;
@@ -180,6 +181,8 @@ export const updateDescription: INodeProperties[] = [
 		placeholder: 'Add Field',
 		default: {},
 		displayOptions,
+		// Keep each list field beside its update mode so the two controls are easy to add together.
+		// eslint-disable-next-line n8n-nodes-base/node-param-collection-type-unsorted-items
 		options: [
 			{
 				displayName: 'Birthday',
@@ -263,9 +266,7 @@ export const updateDescription: INodeProperties[] = [
 					},
 				},
 			},
-		],
-	},
-	{
+		{
 		displayName: 'Emails Update Mode',
 		name: 'emailsUpdateMode',
 		type: 'options',
@@ -575,5 +576,7 @@ export const updateDescription: INodeProperties[] = [
 				preSend: [mergeCustomFields],
 			},
 		},
+		},
+		],
 	},
 ];
