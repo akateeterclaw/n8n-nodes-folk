@@ -7,6 +7,82 @@ const displayOptions = {
         operation: ['update'],
     },
 };
+function mergePrimitiveValues(existing, updates) {
+    const values = [
+        ...(Array.isArray(existing) ? existing : []),
+        ...(Array.isArray(updates) ? updates : []),
+    ].filter((value) => typeof value === 'string' && value.length > 0);
+    return [...new Set(values)];
+}
+function mergeObjectValues(existing, updates) {
+    var _a;
+    const values = [
+        ...(Array.isArray(existing) ? existing : []),
+        ...(Array.isArray(updates) ? updates : []),
+    ].filter((value) => typeof value === 'object' && value !== null);
+    const valuesByKey = new Map();
+    for (const value of values) {
+        const key = typeof value.id === 'string' ? value.id : `name:${String((_a = value.name) !== null && _a !== void 0 ? _a : '')}`;
+        valuesByKey.set(key, value);
+    }
+    return Array.from(valuesByKey.values());
+}
+function mergeCustomFieldValues(existing, updates) {
+    var _a;
+    const existingValues = (existing !== null && existing !== void 0 ? existing : {});
+    const updateValues = (updates !== null && updates !== void 0 ? updates : {});
+    const mergedValues = { ...existingValues };
+    for (const [groupId, fields] of Object.entries(updateValues)) {
+        mergedValues[groupId] = {
+            ...((_a = existingValues[groupId]) !== null && _a !== void 0 ? _a : {}),
+            ...fields,
+        };
+    }
+    return mergedValues;
+}
+async function applyUpdateMode(requestOptions) {
+    var _a, _b;
+    const body = ((_a = requestOptions.body) !== null && _a !== void 0 ? _a : {});
+    const updateMode = this.getNodeParameter('updateMode');
+    delete body.updateMode;
+    if (updateMode !== 'update') {
+        requestOptions.body = body;
+        return requestOptions;
+    }
+    const mergeableProperties = [
+        'emails',
+        'phones',
+        'addresses',
+        'urls',
+        'groups',
+        'companies',
+        'customFieldValues',
+    ];
+    const propertiesToMerge = mergeableProperties.filter((property) => property in body);
+    if (propertiesToMerge.length === 0) {
+        requestOptions.body = body;
+        return requestOptions;
+    }
+    const personId = this.getNodeParameter('personId');
+    const response = (await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
+        method: 'GET',
+        url: `https://api.folk.app/v1/people/${personId}`,
+    }));
+    const person = (_b = response.data) !== null && _b !== void 0 ? _b : {};
+    for (const property of propertiesToMerge) {
+        if (property === 'groups' || property === 'companies') {
+            body[property] = mergeObjectValues(person[property], body[property]);
+        }
+        else if (property === 'customFieldValues') {
+            body[property] = mergeCustomFieldValues(person[property], body[property]);
+        }
+        else {
+            body[property] = mergePrimitiveValues(person[property], body[property]);
+        }
+    }
+    requestOptions.body = body;
+    return requestOptions;
+}
 exports.updateDescription = [
     {
         displayName: 'Person ID',
@@ -16,6 +92,33 @@ exports.updateDescription = [
         required: true,
         displayOptions,
         description: 'The ID of the person to update',
+    },
+    {
+        displayName: 'Update Mode',
+        name: 'updateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether list fields replace existing values or are added to them',
+        options: [
+            {
+                name: 'Overwrite',
+                value: 'overwrite',
+                description: 'Replace each selected list field with the values entered below',
+            },
+            {
+                name: 'Update',
+                value: 'update',
+                description: 'Add entered list values to existing values without removing them',
+            },
+        ],
+        routing: {
+            send: {
+                type: 'body',
+                property: 'updateMode',
+                preSend: [applyUpdateMode],
+            },
+        },
     },
     {
         displayName: 'Update Fields',
@@ -118,7 +221,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Email addresses to set for this person (replaces existing)',
+        description: 'Email addresses to update for this person',
         options: [
             {
                 displayName: 'Email',
@@ -138,7 +241,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'emails',
-                value: '={{ $value.emailValues?.map(e => e.email) || [] }}',
+                value: '={{ $value.emailValues?.length ? $value.emailValues.map(e => e.email) : undefined }}',
             },
         },
     },
@@ -151,7 +254,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Phone numbers to set for this person (replaces existing)',
+        description: 'Phone numbers to update for this person',
         options: [
             {
                 displayName: 'Phone',
@@ -171,7 +274,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'phones',
-                value: '={{ $value.phoneValues?.map(p => p.phone) || [] }}',
+                value: '={{ $value.phoneValues?.length ? $value.phoneValues.map(p => p.phone) : undefined }}',
             },
         },
     },
@@ -184,7 +287,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Groups to set for this person (replaces existing, max 100)',
+        description: 'Groups to update for this person (max 100)',
         options: [
             {
                 displayName: 'Group',
@@ -204,7 +307,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'groups',
-                value: '={{ $value.groupValues?.map(g => ({ id: g.id })) || [] }}',
+                value: '={{ $value.groupValues?.length ? $value.groupValues.map(g => ({ id: g.id })) : undefined }}',
             },
         },
     },
@@ -217,7 +320,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Companies to associate with this person (max 20)',
+        description: 'Companies to update for this person (max 20)',
         options: [
             {
                 displayName: 'Company',
@@ -244,7 +347,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'companies',
-                value: '={{ $value.companyValues?.map(c => c.isId ? { id: c.value } : { name: c.value }) || [] }}',
+                value: '={{ $value.companyValues?.length ? $value.companyValues.map(c => c.isId ? { id: c.value } : { name: c.value }) : undefined }}',
             },
         },
     },
@@ -257,7 +360,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'Addresses to set for this person (max 20)',
+        description: 'Addresses to update for this person (max 20)',
         options: [
             {
                 displayName: 'Address',
@@ -277,7 +380,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'addresses',
-                value: '={{ $value.addressValues?.map(a => a.address) || [] }}',
+                value: '={{ $value.addressValues?.length ? $value.addressValues.map(a => a.address) : undefined }}',
             },
         },
     },
@@ -290,7 +393,7 @@ exports.updateDescription = [
         },
         default: {},
         displayOptions,
-        description: 'URLs to set for this person (max 20)',
+        description: 'URLs to update for this person (max 20)',
         options: [
             {
                 displayName: 'URL',
@@ -310,7 +413,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'urls',
-                value: '={{ $value.urlValues?.map(u => u.url) || [] }}',
+                value: '={{ $value.urlValues?.length ? $value.urlValues.map(u => u.url) : undefined }}',
             },
         },
     },
@@ -325,7 +428,7 @@ exports.updateDescription = [
             send: {
                 type: 'body',
                 property: 'customFieldValues',
-                value: '={{ $value ? (typeof $value === "string" ? JSON.parse($value) : $value) : undefined }}',
+                value: '={{ $value ? (typeof $value === "string" ? (Object.keys(JSON.parse($value)).length ? JSON.parse($value) : undefined) : (Object.keys($value).length ? $value : undefined)) : undefined }}',
             },
         },
     },
