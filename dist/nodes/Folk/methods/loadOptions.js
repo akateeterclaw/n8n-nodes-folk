@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getGroups = getGroups;
 exports.getGroupObjectTypes = getGroupObjectTypes;
+exports.getGroupCustomFields = getGroupCustomFields;
 exports.getUsers = getUsers;
 async function getGroups() {
     var _a;
@@ -31,6 +32,22 @@ async function getGroupObjectTypes() {
         .filter((field) => field.type === 'object')
         .map((field) => ({
         name: field.name,
+        value: field.name,
+    }));
+}
+async function getGroupCustomFields() {
+    var _a;
+    const groupId = this.getCurrentNodeParameter('groupId');
+    if (!groupId) {
+        return [];
+    }
+    const response = await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
+        method: 'GET',
+        url: `https://api.folk.app/v1/groups/${groupId}/custom-fields/person`,
+    });
+    const customFields = ((_a = response.data) === null || _a === void 0 ? void 0 : _a.items) || [];
+    return customFields.map((field) => ({
+        name: field.type ? `${field.name} (${field.type})` : field.name,
         value: field.name,
     }));
 }
