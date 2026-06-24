@@ -27,7 +27,7 @@ function mergePrimitiveValues(existing: unknown, updates: unknown): string[] {
 	return [...new Set(values)];
 }
 
-function mergeObjectValues(existing: unknown, updates: unknown): IDataObject[] {
+function mergeGroupValues(existing: unknown, updates: unknown): IDataObject[] {
 	const values = [
 		...(Array.isArray(existing) ? existing : []),
 		...(Array.isArray(updates) ? updates : []),
@@ -35,8 +35,27 @@ function mergeObjectValues(existing: unknown, updates: unknown): IDataObject[] {
 	const valuesByKey = new Map<string, IDataObject>();
 
 	for (const value of values) {
-		const key = typeof value.id === 'string' ? value.id : `name:${String(value.name ?? '')}`;
-		valuesByKey.set(key, value);
+		if (typeof value.id === 'string') {
+			valuesByKey.set(value.id, { id: value.id });
+		}
+	}
+
+	return Array.from(valuesByKey.values());
+}
+
+function mergeCompanyValues(existing: unknown, updates: unknown): IDataObject[] {
+	const values = [
+		...(Array.isArray(existing) ? existing : []),
+		...(Array.isArray(updates) ? updates : []),
+	].filter((value): value is IDataObject => typeof value === 'object' && value !== null);
+	const valuesByKey = new Map<string, IDataObject>();
+
+	for (const value of values) {
+		if (typeof value.id === 'string') {
+			valuesByKey.set(value.id, { id: value.id });
+		} else if (typeof value.name === 'string') {
+			valuesByKey.set(`name:${value.name}`, { name: value.name });
+		}
 	}
 
 	return Array.from(valuesByKey.values());
@@ -57,31 +76,15 @@ function mergeCustomFieldValues(existing: unknown, updates: unknown): IDataObjec
 	return mergedValues;
 }
 
-async function applyUpdateMode(
+async function applyListUpdateMode(
 	this: IExecuteSingleFunctions,
 	requestOptions: IHttpRequestOptions,
+	property: 'addresses' | 'companies' | 'customFieldValues' | 'emails' | 'groups' | 'phones' | 'urls',
 ): Promise<IHttpRequestOptions> {
 	const body = (requestOptions.body ?? {}) as IDataObject;
-	const updateMode = this.getNodeParameter('updateMode') as UpdateMode;
-	delete body.updateMode;
+	const updateMode = this.getNodeParameter(`${property}UpdateMode`) as UpdateMode;
 
-	if (updateMode !== 'update') {
-		requestOptions.body = body;
-		return requestOptions;
-	}
-
-	const mergeableProperties = [
-		'emails',
-		'phones',
-		'addresses',
-		'urls',
-		'groups',
-		'companies',
-		'customFieldValues',
-	];
-	const propertiesToMerge = mergeableProperties.filter((property) => property in body);
-
-	if (propertiesToMerge.length === 0) {
+	if (updateMode !== 'update' || !(property in body)) {
 		requestOptions.body = body;
 		return requestOptions;
 	}
@@ -97,18 +100,67 @@ async function applyUpdateMode(
 	)) as FolkPersonResponse;
 	const person = response.data ?? {};
 
-	for (const property of propertiesToMerge) {
-		if (property === 'groups' || property === 'companies') {
-			body[property] = mergeObjectValues(person[property], body[property]);
-		} else if (property === 'customFieldValues') {
-			body[property] = mergeCustomFieldValues(person[property], body[property]);
-		} else {
-			body[property] = mergePrimitiveValues(person[property], body[property]);
-		}
+	if (property === 'groups') {
+		body[property] = mergeGroupValues(person[property], body[property]);
+	} else if (property === 'companies') {
+		body[property] = mergeCompanyValues(person[property], body[property]);
+	} else if (property === 'customFieldValues') {
+		body[property] = mergeCustomFieldValues(person[property], body[property]);
+	} else {
+		body[property] = mergePrimitiveValues(person[property], body[property]);
 	}
 
 	requestOptions.body = body;
 	return requestOptions;
+}
+
+async function mergeAddresses(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'addresses');
+}
+
+async function mergeCompanies(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'companies');
+}
+
+async function mergeCustomFields(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'customFieldValues');
+}
+
+async function mergeEmails(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'emails');
+}
+
+async function mergeGroups(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'groups');
+}
+
+async function mergePhones(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'phones');
+}
+
+async function mergeUrls(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	return await applyListUpdateMode.call(this, requestOptions, 'urls');
 }
 
 export const updateDescription: INodeProperties[] = [
@@ -120,33 +172,6 @@ export const updateDescription: INodeProperties[] = [
 		required: true,
 		displayOptions,
 		description: 'The ID of the person to update',
-	},
-	{
-		displayName: 'Update Mode',
-		name: 'updateMode',
-		type: 'options',
-		default: 'overwrite',
-		displayOptions,
-		description: 'Whether list fields replace existing values or are added to them',
-		options: [
-			{
-				name: 'Overwrite',
-				value: 'overwrite',
-				description: 'Replace each selected list field with the values entered below',
-			},
-			{
-				name: 'Update',
-				value: 'update',
-				description: 'Add entered list values to existing values without removing them',
-			},
-		],
-		routing: {
-			send: {
-				type: 'body',
-				property: 'updateMode',
-				preSend: [applyUpdateMode],
-			},
-		},
 	},
 	{
 		displayName: 'Update Fields',
@@ -241,6 +266,18 @@ export const updateDescription: INodeProperties[] = [
 		],
 	},
 	{
+		displayName: 'Emails Update Mode',
+		name: 'emailsUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered emails replace or are added to existing emails',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
+	},
+	{
 		displayName: 'Emails',
 		name: 'emails',
 		type: 'fixedCollection',
@@ -270,8 +307,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'emails',
 				value: '={{ $value.emailValues?.length ? $value.emailValues.map(e => e.email) : undefined }}',
+				preSend: [mergeEmails],
 			},
 		},
+	},
+	{
+		displayName: 'Phones Update Mode',
+		name: 'phonesUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered phones replace or are added to existing phones',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'Phones',
@@ -303,8 +353,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'phones',
 				value: '={{ $value.phoneValues?.length ? $value.phoneValues.map(p => p.phone) : undefined }}',
+				preSend: [mergePhones],
 			},
 		},
+	},
+	{
+		displayName: 'Groups Update Mode',
+		name: 'groupsUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered groups replace or are added to existing groups',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'Groups',
@@ -336,8 +399,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'groups',
 				value: '={{ $value.groupValues?.length ? $value.groupValues.map(g => ({ id: g.id })) : undefined }}',
+				preSend: [mergeGroups],
 			},
 		},
+	},
+	{
+		displayName: 'Companies Update Mode',
+		name: 'companiesUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered companies replace or are added to existing companies',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'Companies',
@@ -376,8 +452,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'companies',
 				value: '={{ $value.companyValues?.length ? $value.companyValues.map(c => c.isId ? { id: c.value } : { name: c.value }) : undefined }}',
+				preSend: [mergeCompanies],
 			},
 		},
+	},
+	{
+		displayName: 'Addresses Update Mode',
+		name: 'addressesUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered addresses replace or are added to existing addresses',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'Addresses',
@@ -409,8 +498,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'addresses',
 				value: '={{ $value.addressValues?.length ? $value.addressValues.map(a => a.address) : undefined }}',
+				preSend: [mergeAddresses],
 			},
 		},
+	},
+	{
+		displayName: 'URLs Update Mode',
+		name: 'urlsUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered URLs replace or are added to existing URLs',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'URLs',
@@ -442,8 +544,21 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'urls',
 				value: '={{ $value.urlValues?.length ? $value.urlValues.map(u => u.url) : undefined }}',
+				preSend: [mergeUrls],
 			},
 		},
+	},
+	{
+		displayName: 'Custom Field Values Update Mode',
+		name: 'customFieldValuesUpdateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether entered custom field values replace or are merged with existing values',
+		options: [
+			{ name: 'Overwrite', value: 'overwrite' },
+			{ name: 'Update', value: 'update' },
+		],
 	},
 	{
 		displayName: 'Custom Field Values',
@@ -457,6 +572,7 @@ export const updateDescription: INodeProperties[] = [
 				type: 'body',
 				property: 'customFieldValues',
 				value: '={{ $value ? (typeof $value === "string" ? (Object.keys(JSON.parse($value)).length ? JSON.parse($value) : undefined) : (Object.keys($value).length ? $value : undefined)) : undefined }}',
+				preSend: [mergeCustomFields],
 			},
 		},
 	},
