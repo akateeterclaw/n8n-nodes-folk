@@ -133,6 +133,7 @@ class Folk {
         };
         this.methods = {
             loadOptions: {
+                getGroupCustomFields: loadOptions_1.getGroupCustomFields,
                 getGroups: loadOptions_1.getGroups,
                 getGroupObjectTypes: loadOptions_1.getGroupObjectTypes,
                 getUsers: loadOptions_1.getUsers,
