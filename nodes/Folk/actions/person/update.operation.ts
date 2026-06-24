@@ -271,7 +271,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'emailsUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered emails replace or are added to existing emails',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -286,7 +285,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'Email addresses to update for this person',
 		options: [
 			{
@@ -317,7 +315,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'phonesUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered phones replace or are added to existing phones',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -332,7 +329,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'Phone numbers to update for this person',
 		options: [
 			{
@@ -363,7 +359,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'groupsUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered groups replace or are added to existing groups',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -378,7 +373,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'Groups to update for this person (max 100)',
 		options: [
 			{
@@ -409,7 +403,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'companiesUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered companies replace or are added to existing companies',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -424,7 +417,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'Companies to update for this person (max 20)',
 		options: [
 			{
@@ -462,7 +454,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'addressesUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered addresses replace or are added to existing addresses',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -477,7 +468,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'Addresses to update for this person (max 20)',
 		options: [
 			{
@@ -508,7 +498,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'urlsUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered URLs replace or are added to existing URLs',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -523,7 +512,6 @@ export const updateDescription: INodeProperties[] = [
 			multipleValues: true,
 		},
 		default: {},
-		displayOptions,
 		description: 'URLs to update for this person (max 20)',
 		options: [
 			{
@@ -554,7 +542,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'customFieldValuesUpdateMode',
 		type: 'options',
 		default: 'overwrite',
-		displayOptions,
 		description: 'Whether entered custom field values replace or are merged with existing values',
 		options: [
 			{ name: 'Overwrite', value: 'overwrite' },
@@ -566,7 +553,6 @@ export const updateDescription: INodeProperties[] = [
 		name: 'customFieldValues',
 		type: 'json',
 		default: '{}',
-		displayOptions,
 		description: 'Custom field values grouped by group ID. Format: { "groupId": { "fieldName": "value" } }.',
 		routing: {
 			send: {
