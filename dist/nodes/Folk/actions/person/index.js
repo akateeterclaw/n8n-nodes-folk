@@ -7,6 +7,7 @@ const delete_operation_1 = require("./delete.operation");
 const get_operation_1 = require("./get.operation");
 const getMany_operation_1 = require("./getMany.operation");
 const search_operation_1 = require("./search.operation");
+const updateCustomFields_operation_1 = require("./updateCustomFields.operation");
 const update_operation_1 = require("./update.operation");
 const displayOnlyForPerson = {
     show: {
@@ -98,6 +99,17 @@ exports.descriptions = [
                     },
                 },
             },
+            {
+                name: 'Update Custom Fields',
+                value: 'updateCustomFields',
+                action: 'Update person custom fields',
+                routing: {
+                    request: {
+                        method: 'PATCH',
+                        url: '=/v1/people/{{ $parameter.personId }}',
+                    },
+                },
+            },
         ],
         default: 'getMany',
     },
@@ -107,6 +119,7 @@ exports.descriptions = [
     ...get_operation_1.getDescription,
     ...getMany_operation_1.getManyDescription,
     ...search_operation_1.searchDescription,
+    ...updateCustomFields_operation_1.updateCustomFieldsDescription,
     ...update_operation_1.updateDescription,
 ];
 //# sourceMappingURL=index.js.map
