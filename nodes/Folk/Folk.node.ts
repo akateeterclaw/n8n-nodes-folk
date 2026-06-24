@@ -14,7 +14,12 @@ import * as reminder from './actions/reminder';
 import * as interaction from './actions/interaction';
 import * as webhook from './actions/webhook';
 
-import { getGroups, getGroupObjectTypes, getUsers } from './methods/loadOptions';
+import {
+	getGroupCustomFields,
+	getGroups,
+	getGroupObjectTypes,
+	getUsers,
+} from './methods/loadOptions';
 
 export class Folk implements INodeType {
 	description: INodeTypeDescription = {
@@ -104,6 +109,7 @@ export class Folk implements INodeType {
 
 	methods = {
 		loadOptions: {
+			getGroupCustomFields,
 			getGroups,
 			getGroupObjectTypes,
 			getUsers,
