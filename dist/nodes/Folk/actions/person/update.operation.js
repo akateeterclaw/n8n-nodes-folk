@@ -14,16 +14,32 @@ function mergePrimitiveValues(existing, updates) {
     ].filter((value) => typeof value === 'string' && value.length > 0);
     return [...new Set(values)];
 }
-function mergeObjectValues(existing, updates) {
-    var _a;
+function mergeGroupValues(existing, updates) {
     const values = [
         ...(Array.isArray(existing) ? existing : []),
         ...(Array.isArray(updates) ? updates : []),
     ].filter((value) => typeof value === 'object' && value !== null);
     const valuesByKey = new Map();
     for (const value of values) {
-        const key = typeof value.id === 'string' ? value.id : `name:${String((_a = value.name) !== null && _a !== void 0 ? _a : '')}`;
-        valuesByKey.set(key, value);
+        if (typeof value.id === 'string') {
+            valuesByKey.set(value.id, { id: value.id });
+        }
+    }
+    return Array.from(valuesByKey.values());
+}
+function mergeCompanyValues(existing, updates) {
+    const values = [
+        ...(Array.isArray(existing) ? existing : []),
+        ...(Array.isArray(updates) ? updates : []),
+    ].filter((value) => typeof value === 'object' && value !== null);
+    const valuesByKey = new Map();
+    for (const value of values) {
+        if (typeof value.id === 'string') {
+            valuesByKey.set(value.id, { id: value.id });
+        }
+        else if (typeof value.name === 'string') {
+            valuesByKey.set(`name:${value.name}`, { name: value.name });
+        }
     }
     return Array.from(valuesByKey.values());
 }
@@ -40,26 +56,11 @@ function mergeCustomFieldValues(existing, updates) {
     }
     return mergedValues;
 }
-async function applyUpdateMode(requestOptions) {
+async function applyListUpdateMode(requestOptions, property) {
     var _a, _b;
     const body = ((_a = requestOptions.body) !== null && _a !== void 0 ? _a : {});
-    const updateMode = this.getNodeParameter('updateMode');
-    delete body.updateMode;
-    if (updateMode !== 'update') {
-        requestOptions.body = body;
-        return requestOptions;
-    }
-    const mergeableProperties = [
-        'emails',
-        'phones',
-        'addresses',
-        'urls',
-        'groups',
-        'companies',
-        'customFieldValues',
-    ];
-    const propertiesToMerge = mergeableProperties.filter((property) => property in body);
-    if (propertiesToMerge.length === 0) {
+    const updateMode = this.getNodeParameter(`${property}UpdateMode`);
+    if (updateMode !== 'update' || !(property in body)) {
         requestOptions.body = body;
         return requestOptions;
     }
@@ -69,19 +70,41 @@ async function applyUpdateMode(requestOptions) {
         url: `https://api.folk.app/v1/people/${personId}`,
     }));
     const person = (_b = response.data) !== null && _b !== void 0 ? _b : {};
-    for (const property of propertiesToMerge) {
-        if (property === 'groups' || property === 'companies') {
-            body[property] = mergeObjectValues(person[property], body[property]);
-        }
-        else if (property === 'customFieldValues') {
-            body[property] = mergeCustomFieldValues(person[property], body[property]);
-        }
-        else {
-            body[property] = mergePrimitiveValues(person[property], body[property]);
-        }
+    if (property === 'groups') {
+        body[property] = mergeGroupValues(person[property], body[property]);
+    }
+    else if (property === 'companies') {
+        body[property] = mergeCompanyValues(person[property], body[property]);
+    }
+    else if (property === 'customFieldValues') {
+        body[property] = mergeCustomFieldValues(person[property], body[property]);
+    }
+    else {
+        body[property] = mergePrimitiveValues(person[property], body[property]);
     }
     requestOptions.body = body;
     return requestOptions;
+}
+async function mergeAddresses(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'addresses');
+}
+async function mergeCompanies(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'companies');
+}
+async function mergeCustomFields(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'customFieldValues');
+}
+async function mergeEmails(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'emails');
+}
+async function mergeGroups(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'groups');
+}
+async function mergePhones(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'phones');
+}
+async function mergeUrls(requestOptions) {
+    return await applyListUpdateMode.call(this, requestOptions, 'urls');
 }
 exports.updateDescription = [
     {
@@ -92,33 +115,6 @@ exports.updateDescription = [
         required: true,
         displayOptions,
         description: 'The ID of the person to update',
-    },
-    {
-        displayName: 'Update Mode',
-        name: 'updateMode',
-        type: 'options',
-        default: 'overwrite',
-        displayOptions,
-        description: 'Whether list fields replace existing values or are added to them',
-        options: [
-            {
-                name: 'Overwrite',
-                value: 'overwrite',
-                description: 'Replace each selected list field with the values entered below',
-            },
-            {
-                name: 'Update',
-                value: 'update',
-                description: 'Add entered list values to existing values without removing them',
-            },
-        ],
-        routing: {
-            send: {
-                type: 'body',
-                property: 'updateMode',
-                preSend: [applyUpdateMode],
-            },
-        },
     },
     {
         displayName: 'Update Fields',
@@ -213,6 +209,18 @@ exports.updateDescription = [
         ],
     },
     {
+        displayName: 'Emails Update Mode',
+        name: 'emailsUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered emails replace or are added to existing emails',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
+    },
+    {
         displayName: 'Emails',
         name: 'emails',
         type: 'fixedCollection',
@@ -242,8 +250,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'emails',
                 value: '={{ $value.emailValues?.length ? $value.emailValues.map(e => e.email) : undefined }}',
+                preSend: [mergeEmails],
             },
         },
+    },
+    {
+        displayName: 'Phones Update Mode',
+        name: 'phonesUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered phones replace or are added to existing phones',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Phones',
@@ -275,8 +296,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'phones',
                 value: '={{ $value.phoneValues?.length ? $value.phoneValues.map(p => p.phone) : undefined }}',
+                preSend: [mergePhones],
             },
         },
+    },
+    {
+        displayName: 'Groups Update Mode',
+        name: 'groupsUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered groups replace or are added to existing groups',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Groups',
@@ -308,8 +342,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'groups',
                 value: '={{ $value.groupValues?.length ? $value.groupValues.map(g => ({ id: g.id })) : undefined }}',
+                preSend: [mergeGroups],
             },
         },
+    },
+    {
+        displayName: 'Companies Update Mode',
+        name: 'companiesUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered companies replace or are added to existing companies',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Companies',
@@ -348,8 +395,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'companies',
                 value: '={{ $value.companyValues?.length ? $value.companyValues.map(c => c.isId ? { id: c.value } : { name: c.value }) : undefined }}',
+                preSend: [mergeCompanies],
             },
         },
+    },
+    {
+        displayName: 'Addresses Update Mode',
+        name: 'addressesUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered addresses replace or are added to existing addresses',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Addresses',
@@ -381,8 +441,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'addresses',
                 value: '={{ $value.addressValues?.length ? $value.addressValues.map(a => a.address) : undefined }}',
+                preSend: [mergeAddresses],
             },
         },
+    },
+    {
+        displayName: 'URLs Update Mode',
+        name: 'urlsUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered URLs replace or are added to existing URLs',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'URLs',
@@ -414,8 +487,21 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'urls',
                 value: '={{ $value.urlValues?.length ? $value.urlValues.map(u => u.url) : undefined }}',
+                preSend: [mergeUrls],
             },
         },
+    },
+    {
+        displayName: 'Custom Field Values Update Mode',
+        name: 'customFieldValuesUpdateMode',
+        type: 'options',
+        default: 'overwrite',
+        displayOptions,
+        description: 'Whether entered custom field values replace or are merged with existing values',
+        options: [
+            { name: 'Overwrite', value: 'overwrite' },
+            { name: 'Update', value: 'update' },
+        ],
     },
     {
         displayName: 'Custom Field Values',
@@ -429,6 +515,7 @@ exports.updateDescription = [
                 type: 'body',
                 property: 'customFieldValues',
                 value: '={{ $value ? (typeof $value === "string" ? (Object.keys(JSON.parse($value)).length ? JSON.parse($value) : undefined) : (Object.keys($value).length ? $value : undefined)) : undefined }}',
+                preSend: [mergeCustomFields],
             },
         },
     },
