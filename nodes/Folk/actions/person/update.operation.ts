@@ -1,4 +1,9 @@
-import type { INodeProperties } from 'n8n-workflow';
+import type {
+	IDataObject,
+	IExecuteSingleFunctions,
+	IHttpRequestOptions,
+	INodeProperties,
+} from 'n8n-workflow';
 
 const displayOptions = {
 	show: {
@@ -6,6 +11,105 @@ const displayOptions = {
 		operation: ['update'],
 	},
 };
+
+type UpdateMode = 'overwrite' | 'update';
+
+interface FolkPersonResponse {
+	data?: IDataObject;
+}
+
+function mergePrimitiveValues(existing: unknown, updates: unknown): string[] {
+	const values = [
+		...(Array.isArray(existing) ? existing : []),
+		...(Array.isArray(updates) ? updates : []),
+	].filter((value): value is string => typeof value === 'string' && value.length > 0);
+
+	return [...new Set(values)];
+}
+
+function mergeObjectValues(existing: unknown, updates: unknown): IDataObject[] {
+	const values = [
+		...(Array.isArray(existing) ? existing : []),
+		...(Array.isArray(updates) ? updates : []),
+	].filter((value): value is IDataObject => typeof value === 'object' && value !== null);
+	const valuesByKey = new Map<string, IDataObject>();
+
+	for (const value of values) {
+		const key = typeof value.id === 'string' ? value.id : `name:${String(value.name ?? '')}`;
+		valuesByKey.set(key, value);
+	}
+
+	return Array.from(valuesByKey.values());
+}
+
+function mergeCustomFieldValues(existing: unknown, updates: unknown): IDataObject {
+	const existingValues = (existing ?? {}) as IDataObject;
+	const updateValues = (updates ?? {}) as IDataObject;
+	const mergedValues: IDataObject = { ...existingValues };
+
+	for (const [groupId, fields] of Object.entries(updateValues)) {
+		mergedValues[groupId] = {
+			...((existingValues[groupId] ?? {}) as IDataObject),
+			...(fields as IDataObject),
+		};
+	}
+
+	return mergedValues;
+}
+
+async function applyUpdateMode(
+	this: IExecuteSingleFunctions,
+	requestOptions: IHttpRequestOptions,
+): Promise<IHttpRequestOptions> {
+	const body = (requestOptions.body ?? {}) as IDataObject;
+	const updateMode = this.getNodeParameter('updateMode') as UpdateMode;
+	delete body.updateMode;
+
+	if (updateMode !== 'update') {
+		requestOptions.body = body;
+		return requestOptions;
+	}
+
+	const mergeableProperties = [
+		'emails',
+		'phones',
+		'addresses',
+		'urls',
+		'groups',
+		'companies',
+		'customFieldValues',
+	];
+	const propertiesToMerge = mergeableProperties.filter((property) => property in body);
+
+	if (propertiesToMerge.length === 0) {
+		requestOptions.body = body;
+		return requestOptions;
+	}
+
+	const personId = this.getNodeParameter('personId') as string;
+	const response = (await this.helpers.httpRequestWithAuthentication.call(
+		this,
+		'folkApi',
+		{
+			method: 'GET',
+			url: `https://api.folk.app/v1/people/${personId}`,
+		},
+	)) as FolkPersonResponse;
+	const person = response.data ?? {};
+
+	for (const property of propertiesToMerge) {
+		if (property === 'groups' || property === 'companies') {
+			body[property] = mergeObjectValues(person[property], body[property]);
+		} else if (property === 'customFieldValues') {
+			body[property] = mergeCustomFieldValues(person[property], body[property]);
+		} else {
+			body[property] = mergePrimitiveValues(person[property], body[property]);
+		}
+	}
+
+	requestOptions.body = body;
+	return requestOptions;
+}
 
 export const updateDescription: INodeProperties[] = [
 	{
@@ -16,6 +120,33 @@ export const updateDescription: INodeProperties[] = [
 		required: true,
 		displayOptions,
 		description: 'The ID of the person to update',
+	},
+	{
+		displayName: 'Update Mode',
+		name: 'updateMode',
+		type: 'options',
+		default: 'overwrite',
+		displayOptions,
+		description: 'Whether list fields replace existing values or are added to them',
+		options: [
+			{
+				name: 'Overwrite',
+				value: 'overwrite',
+				description: 'Replace each selected list field with the values entered below',
+			},
+			{
+				name: 'Update',
+				value: 'update',
+				description: 'Add entered list values to existing values without removing them',
+			},
+		],
+		routing: {
+			send: {
+				type: 'body',
+				property: 'updateMode',
+				preSend: [applyUpdateMode],
+			},
+		},
 	},
 	{
 		displayName: 'Update Fields',
@@ -118,7 +249,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'Email addresses to set for this person (replaces existing)',
+		description: 'Email addresses to update for this person',
 		options: [
 			{
 				displayName: 'Email',
@@ -138,7 +269,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'emails',
-				value: '={{ $value.emailValues?.map(e => e.email) || [] }}',
+				value: '={{ $value.emailValues?.length ? $value.emailValues.map(e => e.email) : undefined }}',
 			},
 		},
 	},
@@ -151,7 +282,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'Phone numbers to set for this person (replaces existing)',
+		description: 'Phone numbers to update for this person',
 		options: [
 			{
 				displayName: 'Phone',
@@ -171,7 +302,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'phones',
-				value: '={{ $value.phoneValues?.map(p => p.phone) || [] }}',
+				value: '={{ $value.phoneValues?.length ? $value.phoneValues.map(p => p.phone) : undefined }}',
 			},
 		},
 	},
@@ -184,7 +315,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'Groups to set for this person (replaces existing, max 100)',
+		description: 'Groups to update for this person (max 100)',
 		options: [
 			{
 				displayName: 'Group',
@@ -204,7 +335,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'groups',
-				value: '={{ $value.groupValues?.map(g => ({ id: g.id })) || [] }}',
+				value: '={{ $value.groupValues?.length ? $value.groupValues.map(g => ({ id: g.id })) : undefined }}',
 			},
 		},
 	},
@@ -217,7 +348,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'Companies to associate with this person (max 20)',
+		description: 'Companies to update for this person (max 20)',
 		options: [
 			{
 				displayName: 'Company',
@@ -244,7 +375,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'companies',
-				value: '={{ $value.companyValues?.map(c => c.isId ? { id: c.value } : { name: c.value }) || [] }}',
+				value: '={{ $value.companyValues?.length ? $value.companyValues.map(c => c.isId ? { id: c.value } : { name: c.value }) : undefined }}',
 			},
 		},
 	},
@@ -257,7 +388,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'Addresses to set for this person (max 20)',
+		description: 'Addresses to update for this person (max 20)',
 		options: [
 			{
 				displayName: 'Address',
@@ -277,7 +408,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'addresses',
-				value: '={{ $value.addressValues?.map(a => a.address) || [] }}',
+				value: '={{ $value.addressValues?.length ? $value.addressValues.map(a => a.address) : undefined }}',
 			},
 		},
 	},
@@ -290,7 +421,7 @@ export const updateDescription: INodeProperties[] = [
 		},
 		default: {},
 		displayOptions,
-		description: 'URLs to set for this person (max 20)',
+		description: 'URLs to update for this person (max 20)',
 		options: [
 			{
 				displayName: 'URL',
@@ -310,7 +441,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'urls',
-				value: '={{ $value.urlValues?.map(u => u.url) || [] }}',
+				value: '={{ $value.urlValues?.length ? $value.urlValues.map(u => u.url) : undefined }}',
 			},
 		},
 	},
@@ -325,7 +456,7 @@ export const updateDescription: INodeProperties[] = [
 			send: {
 				type: 'body',
 				property: 'customFieldValues',
-				value: '={{ $value ? (typeof $value === "string" ? JSON.parse($value) : $value) : undefined }}',
+				value: '={{ $value ? (typeof $value === "string" ? (Object.keys(JSON.parse($value)).length ? JSON.parse($value) : undefined) : (Object.keys($value).length ? $value : undefined)) : undefined }}',
 			},
 		},
 	},
