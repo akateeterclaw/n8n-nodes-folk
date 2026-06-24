@@ -20,8 +20,8 @@ interface FolkPersonResponse {
 
 function mergePrimitiveValues(existing: unknown, updates: unknown): string[] {
 	const values = [
-		...(Array.isArray(existing) ? existing : []),
 		...(Array.isArray(updates) ? updates : []),
+		...(Array.isArray(existing) ? existing : []),
 	].filter((value): value is string => typeof value === 'string' && value.length > 0);
 
 	return [...new Set(values)];
@@ -29,8 +29,8 @@ function mergePrimitiveValues(existing: unknown, updates: unknown): string[] {
 
 function mergeGroupValues(existing: unknown, updates: unknown): IDataObject[] {
 	const values = [
-		...(Array.isArray(existing) ? existing : []),
 		...(Array.isArray(updates) ? updates : []),
+		...(Array.isArray(existing) ? existing : []),
 	].filter((value): value is IDataObject => typeof value === 'object' && value !== null);
 	const valuesByKey = new Map<string, IDataObject>();
 
@@ -45,8 +45,8 @@ function mergeGroupValues(existing: unknown, updates: unknown): IDataObject[] {
 
 function mergeCompanyValues(existing: unknown, updates: unknown): IDataObject[] {
 	const values = [
-		...(Array.isArray(existing) ? existing : []),
 		...(Array.isArray(updates) ? updates : []),
+		...(Array.isArray(existing) ? existing : []),
 	].filter((value): value is IDataObject => typeof value === 'object' && value !== null);
 	const valuesByKey = new Map<string, IDataObject>();
 
