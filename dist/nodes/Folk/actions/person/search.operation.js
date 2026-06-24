@@ -1,12 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchDescription = void 0;
+const n8n_workflow_1 = require("n8n-workflow");
 const displayOptions = {
     show: {
         resource: ['person'],
         operation: ['search'],
     },
 };
+async function throwIfNoPeopleFound(items, response) {
+    const body = response.body;
+    const data = body.data;
+    const people = data === null || data === void 0 ? void 0 : data.items;
+    if (Array.isArray(people) && people.length === 0) {
+        throw new n8n_workflow_1.NodeOperationError(this.getNode(), 'No people found matching the search criteria');
+    }
+    return items;
+}
 exports.searchDescription = [
     {
         displayName: 'Emails',
@@ -195,6 +205,9 @@ exports.searchDescription = [
             send: {
                 type: 'query',
                 property: 'combinator',
+            },
+            output: {
+                postReceive: [throwIfNoPeopleFound],
             },
         },
     },
