@@ -6,6 +6,7 @@ import { deleteDescription } from './delete.operation';
 import { getDescription } from './get.operation';
 import { getManyDescription } from './getMany.operation';
 import { searchDescription } from './search.operation';
+import { updateCustomFieldsDescription } from './updateCustomFields.operation';
 import { updateDescription } from './update.operation';
 
 const displayOnlyForPerson = {
@@ -99,6 +100,17 @@ export const descriptions: INodeProperties[] = [
 					},
 				},
 			},
+			{
+				name: 'Update Custom Fields',
+				value: 'updateCustomFields',
+				action: 'Update person custom fields',
+				routing: {
+					request: {
+						method: 'PATCH',
+						url: '=/v1/people/{{ $parameter.personId }}',
+					},
+				},
+			},
 		],
 		default: 'getMany',
 	},
@@ -108,5 +120,6 @@ export const descriptions: INodeProperties[] = [
 	...getDescription,
 	...getManyDescription,
 	...searchDescription,
+	...updateCustomFieldsDescription,
 	...updateDescription,
 ];
