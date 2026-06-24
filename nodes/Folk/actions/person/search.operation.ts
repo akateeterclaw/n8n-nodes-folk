@@ -1,4 +1,11 @@
-import type { INodeProperties } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
+import type {
+	IDataObject,
+	IExecuteSingleFunctions,
+	IN8nHttpFullResponse,
+	INodeExecutionData,
+	INodeProperties,
+} from 'n8n-workflow';
 
 const displayOptions = {
 	show: {
@@ -6,6 +13,22 @@ const displayOptions = {
 		operation: ['search'],
 	},
 };
+
+async function throwIfNoPeopleFound(
+	this: IExecuteSingleFunctions,
+	items: INodeExecutionData[],
+	response: IN8nHttpFullResponse,
+): Promise<INodeExecutionData[]> {
+	const body = response.body as IDataObject;
+	const data = body.data as IDataObject | undefined;
+	const people = data?.items;
+
+	if (Array.isArray(people) && people.length === 0) {
+		throw new NodeOperationError(this.getNode(), 'No people found matching the search criteria');
+	}
+
+	return items;
+}
 
 export const searchDescription: INodeProperties[] = [
 	{
@@ -196,6 +219,9 @@ export const searchDescription: INodeProperties[] = [
 				type: 'query',
 				property: 'combinator',
 			},
+			output: {
+				postReceive: [throwIfNoPeopleFound],
+			},
 		},
 	},
 	{
@@ -219,7 +245,7 @@ export const searchDescription: INodeProperties[] = [
 			show: {
 				resource: ['person'],
 				operation: ['search'],
-				returnAll: [false],
+		returnAll: [false],
 			},
 		},
 		description: 'Max number of results to return',
