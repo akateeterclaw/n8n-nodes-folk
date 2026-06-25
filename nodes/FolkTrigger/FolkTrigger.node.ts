@@ -10,13 +10,25 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
+import { getGroups } from '../Folk/methods/loadOptions';
+
 interface FolkWebhook {
 	id: string;
 	name: string;
 	targetUrl: string;
-	subscribedEvents: Array<{ eventType: string }>;
+	subscribedEvents: Array<{ eventType: string; filter?: IDataObject }>;
 	status: string;
 }
+
+interface FolkWebhookChange {
+	path?: string[];
+	type?: string;
+	value?: Array<{ id?: string }>;
+}
+
+const GROUP_ADDED_EVENT = 'person.group_added';
+const GROUP_REMOVED_EVENT = 'person.group_removed';
+const GROUPS_UPDATED_EVENT = 'person.groups_updated';
 
 async function folkApiRequest(
 	this: IHookFunctions | IWebhookFunctions,
@@ -35,6 +47,46 @@ async function folkApiRequest(
 	}
 
 	return await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', options);
+}
+
+function buildSubscribedEvents(this: IHookFunctions): Array<{ eventType: string; filter?: IDataObject }> {
+	const events = this.getNodeParameter('events') as string[];
+	const subscribedEvents: Array<{ eventType: string; filter?: IDataObject }> = [];
+
+	for (const eventType of events) {
+		if (eventType === GROUP_ADDED_EVENT || eventType === GROUP_REMOVED_EVENT) {
+			continue;
+		}
+
+		subscribedEvents.push({ eventType });
+	}
+
+	if (events.includes(GROUP_ADDED_EVENT) || events.includes(GROUP_REMOVED_EVENT)) {
+		const groupId = this.getNodeParameter('groupId') as string;
+		subscribedEvents.push({
+			eventType: GROUPS_UPDATED_EVENT,
+			filter: { groupId },
+		});
+	}
+
+	return subscribedEvents;
+}
+
+function sortSubscribedEvents(
+	subscribedEvents: Array<{ eventType: string; filter?: IDataObject }>,
+): Array<{ eventType: string; filter?: IDataObject }> {
+	return [...subscribedEvents].sort((a, b) =>
+		`${a.eventType}:${JSON.stringify(a.filter || {})}`.localeCompare(
+			`${b.eventType}:${JSON.stringify(b.filter || {})}`,
+		),
+	);
+}
+
+function subscribedEventsMatch(
+	currentEvents: Array<{ eventType: string; filter?: IDataObject }>,
+	expectedEvents: Array<{ eventType: string; filter?: IDataObject }>,
+): boolean {
+	return JSON.stringify(sortSubscribedEvents(currentEvents)) === JSON.stringify(sortSubscribedEvents(expectedEvents));
 }
 
 export class FolkTrigger implements INodeType {
@@ -107,13 +159,44 @@ export class FolkTrigger implements INodeType {
 						value: 'person.deleted',
 					},
 					{
+						name: 'Person Added to Group',
+						value: GROUP_ADDED_EVENT,
+					},
+					{
+						name: 'Person Removed From Group',
+						value: GROUP_REMOVED_EVENT,
+					},
+					{
 						name: 'Person Updated',
 						value: 'person.updated',
 					},
 				],
 			},
+			{
+				displayName: 'Group Name or ID',
+				name: 'groupId',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getGroups',
+				},
+				required: true,
+				default: '',
+				displayOptions: {
+					show: {
+						events: [GROUP_ADDED_EVENT, GROUP_REMOVED_EVENT],
+					},
+				},
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
 		],
 		usableAsTool: true,
+	};
+
+	methods = {
+		loadOptions: {
+			getGroups,
+		},
 	};
 
 	webhookMethods = {
@@ -121,6 +204,7 @@ export class FolkTrigger implements INodeType {
 			async checkExists(this: IHookFunctions): Promise<boolean> {
 				const webhookUrl = this.getNodeWebhookUrl('default');
 				const webhookData = this.getWorkflowStaticData('node');
+				const subscribedEvents = buildSubscribedEvents.call(this);
 
 				// Get all webhooks from Folk
 				const response = (await folkApiRequest.call(this, 'GET', '/v1/webhooks')) as {
@@ -133,7 +217,7 @@ export class FolkTrigger implements INodeType {
 					if (webhook.targetUrl === webhookUrl) {
 						// Found existing webhook, store its ID
 						webhookData.webhookId = webhook.id;
-						return true;
+						return subscribedEventsMatch(webhook.subscribedEvents || [], subscribedEvents);
 					}
 				}
 
@@ -143,19 +227,20 @@ export class FolkTrigger implements INodeType {
 			async create(this: IHookFunctions): Promise<boolean> {
 				const webhookUrl = this.getNodeWebhookUrl('default');
 				const webhookData = this.getWorkflowStaticData('node');
-				const events = this.getNodeParameter('events') as string[];
+				const subscribedEvents = buildSubscribedEvents.call(this);
 
-				// Build subscribed events array
-				const subscribedEvents = events.map((eventType) => ({ eventType }));
-
-				// Create webhook in Folk
 				const body: IDataObject = {
 					name: `n8n Workflow Webhook`,
 					targetUrl: webhookUrl,
 					subscribedEvents,
 				};
 
-				const response = (await folkApiRequest.call(this, 'POST', '/v1/webhooks', body)) as {
+				const method = webhookData.webhookId ? 'PATCH' : 'POST';
+				const endpoint = webhookData.webhookId
+					? `/v1/webhooks/${webhookData.webhookId}`
+					: '/v1/webhooks';
+
+				const response = (await folkApiRequest.call(this, method, endpoint, body)) as {
 					data: { id: string };
 				};
 
@@ -193,6 +278,28 @@ export class FolkTrigger implements INodeType {
 	async webhook(this: IWebhookFunctions): Promise<IWebhookResponseData> {
 		const req = this.getRequestObject();
 		const body = req.body as IDataObject;
+		const events = this.getNodeParameter('events') as string[];
+
+		if (body.type === GROUPS_UPDATED_EVENT) {
+			const groupId = this.getNodeParameter('groupId', '') as string;
+			const changes = ((body.data as IDataObject)?.changes || []) as FolkWebhookChange[];
+			const hasMatchingGroupChange = changes.some((change) => {
+				const isGroupChange = Array.isArray(change.path) && change.path.join('.') === 'groups';
+				const containsSelectedGroup = Array.isArray(change.value)
+					? change.value.some((group) => group.id === groupId)
+					: false;
+				const selectedAdd = change.type === 'add' && events.includes(GROUP_ADDED_EVENT);
+				const selectedRemove = change.type === 'remove' && events.includes(GROUP_REMOVED_EVENT);
+
+				return isGroupChange && containsSelectedGroup && (selectedAdd || selectedRemove);
+			});
+
+			if (!hasMatchingGroupChange) {
+				return {
+					workflowData: [],
+				};
+			}
+		}
 
 		// Return the Folk event data to the workflow
 		return {
