@@ -10,7 +10,7 @@ import type {
 } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 
-import { getGroups } from '../Folk/methods/loadOptions';
+import { getGroups, getPersonCustomFields } from '../Folk/methods/loadOptions';
 
 interface FolkWebhook {
 	id: string;
@@ -29,6 +29,7 @@ interface FolkWebhookChange {
 const GROUP_ADDED_EVENT = 'person.group_added';
 const GROUP_REMOVED_EVENT = 'person.group_removed';
 const GROUPS_UPDATED_EVENT = 'person.groups_updated';
+const PERSON_UPDATED_FILTERED_EVENT = 'person.updated_filtered';
 
 async function folkApiRequest(
 	this: IHookFunctions | IWebhookFunctions,
@@ -54,7 +55,11 @@ function buildSubscribedEvents(this: IHookFunctions): Array<{ eventType: string;
 	const subscribedEvents: Array<{ eventType: string; filter?: IDataObject }> = [];
 
 	for (const eventType of events) {
-		if (eventType === GROUP_ADDED_EVENT || eventType === GROUP_REMOVED_EVENT) {
+		if (
+			eventType === GROUP_ADDED_EVENT ||
+			eventType === GROUP_REMOVED_EVENT ||
+			eventType === PERSON_UPDATED_FILTERED_EVENT
+		) {
 			continue;
 		}
 
@@ -66,6 +71,25 @@ function buildSubscribedEvents(this: IHookFunctions): Array<{ eventType: string;
 		subscribedEvents.push({
 			eventType: GROUPS_UPDATED_EVENT,
 			filter: { groupId },
+		});
+	}
+
+	if (events.includes(PERSON_UPDATED_FILTERED_EVENT)) {
+		const fieldType = this.getNodeParameter('personUpdatedFieldType') as string;
+		let path: string[];
+
+		if (fieldType === 'custom') {
+			const groupId = this.getNodeParameter('personUpdatedGroupId') as string;
+			const fieldName = this.getNodeParameter('personUpdatedCustomField') as string;
+			path = ['customFieldValues', groupId, fieldName];
+		} else {
+			const fieldName = this.getNodeParameter('personUpdatedNativeField') as string;
+			path = [fieldName];
+		}
+
+		subscribedEvents.push({
+			eventType: 'person.updated',
+			filter: { path },
 		});
 	}
 
@@ -170,6 +194,10 @@ export class FolkTrigger implements INodeType {
 						name: 'Person Updated',
 						value: 'person.updated',
 					},
+					{
+						name: 'Person Updated (Filtered)',
+						value: PERSON_UPDATED_FILTERED_EVENT,
+					},
 				],
 			},
 			{
@@ -189,6 +217,89 @@ export class FolkTrigger implements INodeType {
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
+			{
+				displayName: 'Field Type',
+				name: 'personUpdatedFieldType',
+				type: 'options',
+				required: true,
+				default: 'native',
+				displayOptions: {
+					show: {
+						events: [PERSON_UPDATED_FILTERED_EVENT],
+					},
+				},
+				options: [
+					{
+						name: 'Native Field',
+						value: 'native',
+					},
+					{
+						name: 'Custom Field',
+						value: 'custom',
+					},
+				],
+			},
+			{
+				displayName: 'Updated Field',
+				name: 'personUpdatedNativeField',
+				type: 'options',
+				required: true,
+				default: 'firstName',
+				displayOptions: {
+					show: {
+						events: [PERSON_UPDATED_FILTERED_EVENT],
+						personUpdatedFieldType: ['native'],
+					},
+				},
+				options: [
+					{ name: 'Addresses', value: 'addresses' },
+					{ name: 'Birthday', value: 'birthday' },
+					{ name: 'Description', value: 'description' },
+					{ name: 'Emails', value: 'emails' },
+					{ name: 'First Name', value: 'firstName' },
+					{ name: 'Job Title', value: 'jobTitle' },
+					{ name: 'Last Name', value: 'lastName' },
+					{ name: 'Phones', value: 'phones' },
+					{ name: 'URLs', value: 'urls' },
+				],
+			},
+			{
+				displayName: 'Group Name or ID',
+				name: 'personUpdatedGroupId',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getGroups',
+				},
+				required: true,
+				default: '',
+				displayOptions: {
+					show: {
+						events: [PERSON_UPDATED_FILTERED_EVENT],
+						personUpdatedFieldType: ['custom'],
+					},
+				},
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
+			{
+				displayName: 'Updated Custom Field Name or ID',
+				name: 'personUpdatedCustomField',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getPersonCustomFields',
+					loadOptionsDependsOn: ['personUpdatedGroupId'],
+				},
+				required: true,
+				default: '',
+				displayOptions: {
+					show: {
+						events: [PERSON_UPDATED_FILTERED_EVENT],
+						personUpdatedFieldType: ['custom'],
+					},
+				},
+				description:
+					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			},
 		],
 		usableAsTool: true,
 	};
@@ -196,6 +307,7 @@ export class FolkTrigger implements INodeType {
 	methods = {
 		loadOptions: {
 			getGroups,
+			getPersonCustomFields,
 		},
 	};
 
