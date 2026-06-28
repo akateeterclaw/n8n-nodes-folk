@@ -23,6 +23,33 @@ export async function getGroups(
 	}));
 }
 
+export async function getPersonCustomFields(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	const groupId = this.getCurrentNodeParameter('personUpdatedGroupId') as string;
+
+	if (!groupId) {
+		return [];
+	}
+
+	const response = await this.helpers.httpRequestWithAuthentication.call(
+		this,
+		'folkApi',
+		{
+			method: 'GET',
+			url: `https://api.folk.app/v1/groups/${groupId}/custom-fields/person`,
+			qs: { limit: 100 },
+		},
+	);
+
+	const customFields = response.data?.items || [];
+	return customFields.map((field: { name: string; type: string }) => ({
+		name: field.name,
+		value: field.name,
+		description: field.type,
+	}));
+}
+
 export async function getGroupObjectTypes(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
