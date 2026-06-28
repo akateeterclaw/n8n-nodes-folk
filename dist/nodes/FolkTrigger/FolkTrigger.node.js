@@ -6,6 +6,7 @@ const loadOptions_1 = require("../Folk/methods/loadOptions");
 const GROUP_ADDED_EVENT = 'person.group_added';
 const GROUP_REMOVED_EVENT = 'person.group_removed';
 const GROUPS_UPDATED_EVENT = 'person.groups_updated';
+const PERSON_UPDATED_FILTERED_EVENT = 'person.updated_filtered';
 async function folkApiRequest(method, endpoint, body) {
     const options = {
         method,
@@ -21,7 +22,9 @@ function buildSubscribedEvents() {
     const events = this.getNodeParameter('events');
     const subscribedEvents = [];
     for (const eventType of events) {
-        if (eventType === GROUP_ADDED_EVENT || eventType === GROUP_REMOVED_EVENT) {
+        if (eventType === GROUP_ADDED_EVENT ||
+            eventType === GROUP_REMOVED_EVENT ||
+            eventType === PERSON_UPDATED_FILTERED_EVENT) {
             continue;
         }
         subscribedEvents.push({ eventType });
@@ -31,6 +34,23 @@ function buildSubscribedEvents() {
         subscribedEvents.push({
             eventType: GROUPS_UPDATED_EVENT,
             filter: { groupId },
+        });
+    }
+    if (events.includes(PERSON_UPDATED_FILTERED_EVENT)) {
+        const fieldType = this.getNodeParameter('personUpdatedFieldType');
+        let path;
+        if (fieldType === 'custom') {
+            const groupId = this.getNodeParameter('personUpdatedGroupId');
+            const fieldName = this.getNodeParameter('personUpdatedCustomField');
+            path = ['customFieldValues', groupId, fieldName];
+        }
+        else {
+            const fieldName = this.getNodeParameter('personUpdatedNativeField');
+            path = [fieldName];
+        }
+        subscribedEvents.push({
+            eventType: 'person.updated',
+            filter: { path },
         });
     }
     return subscribedEvents;
@@ -123,6 +143,10 @@ class FolkTrigger {
                             name: 'Person Updated',
                             value: 'person.updated',
                         },
+                        {
+                            name: 'Person Updated (Filtered)',
+                            value: PERSON_UPDATED_FILTERED_EVENT,
+                        },
                     ],
                 },
                 {
@@ -141,12 +165,94 @@ class FolkTrigger {
                     },
                     description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
                 },
+                {
+                    displayName: 'Field Type',
+                    name: 'personUpdatedFieldType',
+                    type: 'options',
+                    required: true,
+                    default: 'native',
+                    displayOptions: {
+                        show: {
+                            events: [PERSON_UPDATED_FILTERED_EVENT],
+                        },
+                    },
+                    options: [
+                        {
+                            name: 'Native Field',
+                            value: 'native',
+                        },
+                        {
+                            name: 'Custom Field',
+                            value: 'custom',
+                        },
+                    ],
+                },
+                {
+                    displayName: 'Updated Field',
+                    name: 'personUpdatedNativeField',
+                    type: 'options',
+                    required: true,
+                    default: 'firstName',
+                    displayOptions: {
+                        show: {
+                            events: [PERSON_UPDATED_FILTERED_EVENT],
+                            personUpdatedFieldType: ['native'],
+                        },
+                    },
+                    options: [
+                        { name: 'Addresses', value: 'addresses' },
+                        { name: 'Birthday', value: 'birthday' },
+                        { name: 'Description', value: 'description' },
+                        { name: 'Emails', value: 'emails' },
+                        { name: 'First Name', value: 'firstName' },
+                        { name: 'Job Title', value: 'jobTitle' },
+                        { name: 'Last Name', value: 'lastName' },
+                        { name: 'Phones', value: 'phones' },
+                        { name: 'URLs', value: 'urls' },
+                    ],
+                },
+                {
+                    displayName: 'Group Name or ID',
+                    name: 'personUpdatedGroupId',
+                    type: 'options',
+                    typeOptions: {
+                        loadOptionsMethod: 'getGroups',
+                    },
+                    required: true,
+                    default: '',
+                    displayOptions: {
+                        show: {
+                            events: [PERSON_UPDATED_FILTERED_EVENT],
+                            personUpdatedFieldType: ['custom'],
+                        },
+                    },
+                    description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+                },
+                {
+                    displayName: 'Updated Custom Field Name or ID',
+                    name: 'personUpdatedCustomField',
+                    type: 'options',
+                    typeOptions: {
+                        loadOptionsMethod: 'getPersonCustomFields',
+                        loadOptionsDependsOn: ['personUpdatedGroupId'],
+                    },
+                    required: true,
+                    default: '',
+                    displayOptions: {
+                        show: {
+                            events: [PERSON_UPDATED_FILTERED_EVENT],
+                            personUpdatedFieldType: ['custom'],
+                        },
+                    },
+                    description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+                },
             ],
             usableAsTool: true,
         };
         this.methods = {
             loadOptions: {
                 getGroups: loadOptions_1.getGroups,
+                getPersonCustomFields: loadOptions_1.getPersonCustomFields,
             },
         };
         this.webhookMethods = {
