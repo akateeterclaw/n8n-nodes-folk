@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getGroups = getGroups;
+exports.getPersonCustomFields = getPersonCustomFields;
 exports.getGroupObjectTypes = getGroupObjectTypes;
 exports.getGroupCustomFields = getGroupCustomFields;
 exports.getUsers = getUsers;
@@ -15,6 +16,24 @@ async function getGroups() {
     return groups.map((group) => ({
         name: group.name,
         value: group.id,
+    }));
+}
+async function getPersonCustomFields() {
+    var _a;
+    const groupId = this.getCurrentNodeParameter('personUpdatedGroupId');
+    if (!groupId) {
+        return [];
+    }
+    const response = await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
+        method: 'GET',
+        url: `https://api.folk.app/v1/groups/${groupId}/custom-fields/person`,
+        qs: { limit: 100 },
+    });
+    const customFields = ((_a = response.data) === null || _a === void 0 ? void 0 : _a.items) || [];
+    return customFields.map((field) => ({
+        name: field.name,
+        value: field.name,
+        description: field.type,
     }));
 }
 async function getGroupObjectTypes() {
