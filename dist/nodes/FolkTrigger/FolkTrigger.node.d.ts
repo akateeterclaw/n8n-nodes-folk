@@ -1,10 +1,11 @@
 import type { IHookFunctions, INodeType, INodeTypeDescription, IWebhookFunctions, IWebhookResponseData } from 'n8n-workflow';
-import { getGroups } from '../Folk/methods/loadOptions';
+import { getGroups, getPersonCustomFields } from '../Folk/methods/loadOptions';
 export declare class FolkTrigger implements INodeType {
     description: INodeTypeDescription;
     methods: {
         loadOptions: {
             getGroups: typeof getGroups;
+            getPersonCustomFields: typeof getPersonCustomFields;
         };
     };
     webhookMethods: {
