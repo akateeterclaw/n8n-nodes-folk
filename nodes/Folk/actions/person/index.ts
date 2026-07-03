@@ -5,6 +5,7 @@ import { createDescription } from './create.operation';
 import { deleteDescription } from './delete.operation';
 import { getDescription } from './get.operation';
 import { getManyDescription } from './getMany.operation';
+import { removeFromGroupDescription } from './removeFromGroup.operation';
 import { searchDescription } from './search.operation';
 import { updateCustomFieldsDescription } from './updateCustomFields.operation';
 import { updateDescription } from './update.operation';
@@ -79,6 +80,17 @@ export const descriptions: INodeProperties[] = [
 				},
 			},
 			{
+				name: 'Remove From Group',
+				value: 'removeFromGroup',
+				action: 'Remove a person from a group',
+				routing: {
+					request: {
+						method: 'PATCH',
+						url: '=/v1/people/{{ $parameter.personId }}',
+					},
+				},
+			},
+			{
 				name: 'Search',
 				value: 'search',
 				action: 'Search people',
@@ -119,6 +131,7 @@ export const descriptions: INodeProperties[] = [
 	...deleteDescription,
 	...getDescription,
 	...getManyDescription,
+	...removeFromGroupDescription,
 	...searchDescription,
 	...updateCustomFieldsDescription,
 	...updateDescription,
