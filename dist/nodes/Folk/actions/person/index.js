@@ -6,6 +6,7 @@ const create_operation_1 = require("./create.operation");
 const delete_operation_1 = require("./delete.operation");
 const get_operation_1 = require("./get.operation");
 const getMany_operation_1 = require("./getMany.operation");
+const removeFromGroup_operation_1 = require("./removeFromGroup.operation");
 const search_operation_1 = require("./search.operation");
 const updateCustomFields_operation_1 = require("./updateCustomFields.operation");
 const update_operation_1 = require("./update.operation");
@@ -78,6 +79,17 @@ exports.descriptions = [
                 },
             },
             {
+                name: 'Remove From Group',
+                value: 'removeFromGroup',
+                action: 'Remove a person from a group',
+                routing: {
+                    request: {
+                        method: 'PATCH',
+                        url: '=/v1/people/{{ $parameter.personId }}',
+                    },
+                },
+            },
+            {
                 name: 'Search',
                 value: 'search',
                 action: 'Search people',
@@ -118,6 +130,7 @@ exports.descriptions = [
     ...delete_operation_1.deleteDescription,
     ...get_operation_1.getDescription,
     ...getMany_operation_1.getManyDescription,
+    ...removeFromGroup_operation_1.removeFromGroupDescription,
     ...search_operation_1.searchDescription,
     ...updateCustomFields_operation_1.updateCustomFieldsDescription,
     ...update_operation_1.updateDescription,
