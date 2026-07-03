@@ -7,6 +7,15 @@ const GROUP_ADDED_EVENT = 'person.group_added';
 const GROUP_REMOVED_EVENT = 'person.group_removed';
 const GROUPS_UPDATED_EVENT = 'person.groups_updated';
 const PERSON_UPDATED_FILTERED_EVENT = 'person.updated_filtered';
+function isNotFoundError(error) {
+    var _a, _b, _c;
+    if (typeof error !== 'object' || error === null) {
+        return false;
+    }
+    const apiError = error;
+    const statusCode = (_b = (_a = apiError.httpCode) !== null && _a !== void 0 ? _a : apiError.statusCode) !== null && _b !== void 0 ? _b : (_c = apiError.cause) === null || _c === void 0 ? void 0 : _c.statusCode;
+    return Number(statusCode) === 404;
+}
 async function folkApiRequest(method, endpoint, body) {
     const options = {
         method,
@@ -270,10 +279,10 @@ class FolkTrigger {
                             return subscribedEventsMatch(webhook.subscribedEvents || [], subscribedEvents);
                         }
                     }
+                    delete webhookData.webhookId;
                     return false;
                 },
                 async create() {
-                    var _a;
                     const webhookUrl = this.getNodeWebhookUrl('default');
                     const webhookData = this.getWorkflowStaticData('node');
                     const subscribedEvents = buildSubscribedEvents.call(this);
@@ -282,13 +291,22 @@ class FolkTrigger {
                         targetUrl: webhookUrl,
                         subscribedEvents,
                     };
-                    const method = webhookData.webhookId ? 'PATCH' : 'POST';
-                    const endpoint = webhookData.webhookId
-                        ? `/v1/webhooks/${webhookData.webhookId}`
-                        : '/v1/webhooks';
-                    const response = (await folkApiRequest.call(this, method, endpoint, body));
-                    if ((_a = response.data) === null || _a === void 0 ? void 0 : _a.id) {
-                        webhookData.webhookId = response.data.id;
+                    let response;
+                    if (webhookData.webhookId) {
+                        try {
+                            response = await folkApiRequest.call(this, 'PATCH', `/v1/webhooks/${webhookData.webhookId}`, body);
+                        }
+                        catch (error) {
+                            if (!isNotFoundError(error)) {
+                                throw error;
+                            }
+                            delete webhookData.webhookId;
+                        }
+                    }
+                    response !== null && response !== void 0 ? response : (response = await folkApiRequest.call(this, 'POST', '/v1/webhooks', body));
+                    const responseData = response.data;
+                    if (responseData === null || responseData === void 0 ? void 0 : responseData.id) {
+                        webhookData.webhookId = responseData.id;
                         return true;
                     }
                     return false;
@@ -299,8 +317,10 @@ class FolkTrigger {
                         try {
                             await folkApiRequest.call(this, 'DELETE', `/v1/webhooks/${webhookData.webhookId}`);
                         }
-                        catch {
-                            return false;
+                        catch (error) {
+                            if (!isNotFoundError(error)) {
+                                throw error;
+                            }
                         }
                         delete webhookData.webhookId;
                     }
