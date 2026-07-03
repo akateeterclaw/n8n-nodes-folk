@@ -31,6 +31,21 @@ const GROUP_REMOVED_EVENT = 'person.group_removed';
 const GROUPS_UPDATED_EVENT = 'person.groups_updated';
 const PERSON_UPDATED_FILTERED_EVENT = 'person.updated_filtered';
 
+function isNotFoundError(error: unknown): boolean {
+	if (typeof error !== 'object' || error === null) {
+		return false;
+	}
+
+	const apiError = error as {
+		httpCode?: number | string;
+		statusCode?: number | string;
+		cause?: { statusCode?: number | string };
+	};
+	const statusCode = apiError.httpCode ?? apiError.statusCode ?? apiError.cause?.statusCode;
+
+	return Number(statusCode) === 404;
+}
+
 async function folkApiRequest(
 	this: IHookFunctions | IWebhookFunctions,
 	method: IHttpRequestMethods,
@@ -333,6 +348,7 @@ export class FolkTrigger implements INodeType {
 					}
 				}
 
+				delete webhookData.webhookId;
 				return false;
 			},
 
@@ -347,17 +363,30 @@ export class FolkTrigger implements INodeType {
 					subscribedEvents,
 				};
 
-				const method = webhookData.webhookId ? 'PATCH' : 'POST';
-				const endpoint = webhookData.webhookId
-					? `/v1/webhooks/${webhookData.webhookId}`
-					: '/v1/webhooks';
+				let response: IDataObject | undefined;
 
-				const response = (await folkApiRequest.call(this, method, endpoint, body)) as {
-					data: { id: string };
-				};
+				if (webhookData.webhookId) {
+					try {
+						response = await folkApiRequest.call(
+							this,
+							'PATCH',
+							`/v1/webhooks/${webhookData.webhookId}`,
+							body,
+						);
+					} catch (error) {
+						if (!isNotFoundError(error)) {
+							throw error;
+						}
 
-				if (response.data?.id) {
-					webhookData.webhookId = response.data.id;
+						delete webhookData.webhookId;
+					}
+				}
+
+				response ??= await folkApiRequest.call(this, 'POST', '/v1/webhooks', body);
+
+				const responseData = response.data as IDataObject | undefined;
+				if (responseData?.id) {
+					webhookData.webhookId = responseData.id;
 					return true;
 				}
 
@@ -374,9 +403,10 @@ export class FolkTrigger implements INodeType {
 							'DELETE',
 							`/v1/webhooks/${webhookData.webhookId}`,
 						);
-					} catch {
-						// Webhook may have been deleted manually, ignore error
-						return false;
+					} catch (error) {
+						if (!isNotFoundError(error)) {
+							throw error;
+						}
 					}
 
 					delete webhookData.webhookId;
