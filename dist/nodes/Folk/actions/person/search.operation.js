@@ -73,11 +73,10 @@ exports.searchDescription = [
         ],
     },
     {
-        displayName: 'Group ID',
+        displayName: 'Group Name or ID',
         name: 'groupIdsAll',
-        type: 'string',
-        default: [],
-        placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
+        type: 'options',
+        default: '',
         required: true,
         displayOptions: {
             show: {
@@ -86,10 +85,11 @@ exports.searchDescription = [
                 groupFilterOperator: ['all'],
             },
         },
-        description: 'One or more group IDs to search for. Adds filter[groups][all][ID] query parameters.',
+        description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
         typeOptions: {
+            loadOptionsMethod: 'getGroups',
             multipleValues: true,
-            multipleValueButtonText: 'Add Group ID',
+            multipleValueButtonText: 'Add Group',
         },
         routing: {
             send: {
@@ -99,11 +99,10 @@ exports.searchDescription = [
         },
     },
     {
-        displayName: 'Group ID',
+        displayName: 'Group Name or ID',
         name: 'groupIdsIn',
-        type: 'string',
-        default: [],
-        placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
+        type: 'options',
+        default: '',
         required: true,
         displayOptions: {
             show: {
@@ -112,10 +111,11 @@ exports.searchDescription = [
                 groupFilterOperator: ['in'],
             },
         },
-        description: 'One or more group IDs to search for. Adds filter[groups][in][ID] query parameters.',
+        description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
         typeOptions: {
+            loadOptionsMethod: 'getGroups',
             multipleValues: true,
-            multipleValueButtonText: 'Add Group ID',
+            multipleValueButtonText: 'Add Group',
         },
         routing: {
             send: {
@@ -125,11 +125,10 @@ exports.searchDescription = [
         },
     },
     {
-        displayName: 'Group ID',
+        displayName: 'Group Name or ID',
         name: 'groupIdsNotIn',
-        type: 'string',
-        default: [],
-        placeholder: 'grp_79b6ed73-9939-4118-ba65-7f8cdf401052',
+        type: 'options',
+        default: '',
         required: true,
         displayOptions: {
             show: {
@@ -138,10 +137,11 @@ exports.searchDescription = [
                 groupFilterOperator: ['not_in'],
             },
         },
-        description: 'One or more group IDs to search for. Adds filter[groups][not_in][ID] query parameters.',
+        description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
         typeOptions: {
+            loadOptionsMethod: 'getGroups',
             multipleValues: true,
-            multipleValueButtonText: 'Add Group ID',
+            multipleValueButtonText: 'Add Group',
         },
         routing: {
             send: {
