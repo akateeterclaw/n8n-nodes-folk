@@ -56,12 +56,15 @@ exports.addToGroupsDescription = [
                 name: 'groupValues',
                 values: [
                     {
-                        displayName: 'Group ID',
+                        displayName: 'Group Name or ID',
                         name: 'id',
-                        type: 'string',
+                        type: 'options',
+                        typeOptions: {
+                            loadOptionsMethod: 'getGroups',
+                        },
                         default: '',
                         required: true,
-                        description: 'The ID of the group to add',
+                        description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
                     },
                 ],
             },
