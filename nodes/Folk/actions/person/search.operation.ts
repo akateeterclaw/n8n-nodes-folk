@@ -86,10 +86,10 @@ export const searchDescription: INodeProperties[] = [
 		],
 	},
 	{
-		displayName: 'Group Name or ID',
+		displayName: 'Group Names or IDs',
 		name: 'groupIdsAll',
-		type: 'options',
-		default: '',
+		type: 'multiOptions',
+		default: [],
 		required: true,
 		displayOptions: {
 			show: {
@@ -99,11 +99,9 @@ export const searchDescription: INodeProperties[] = [
 			},
 		},
 		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 		typeOptions: {
 			loadOptionsMethod: 'getGroups',
-			multipleValues: true,
-			multipleValueButtonText: 'Add Group',
 		},
 		routing: {
 			send: {
@@ -113,10 +111,10 @@ export const searchDescription: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Group Name or ID',
+		displayName: 'Group Names or IDs',
 		name: 'groupIdsIn',
-		type: 'options',
-		default: '',
+		type: 'multiOptions',
+		default: [],
 		required: true,
 		displayOptions: {
 			show: {
@@ -126,11 +124,9 @@ export const searchDescription: INodeProperties[] = [
 			},
 		},
 		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 		typeOptions: {
 			loadOptionsMethod: 'getGroups',
-			multipleValues: true,
-			multipleValueButtonText: 'Add Group',
 		},
 		routing: {
 			send: {
@@ -140,10 +136,10 @@ export const searchDescription: INodeProperties[] = [
 		},
 	},
 	{
-		displayName: 'Group Name or ID',
+		displayName: 'Group Names or IDs',
 		name: 'groupIdsNotIn',
-		type: 'options',
-		default: '',
+		type: 'multiOptions',
+		default: [],
 		required: true,
 		displayOptions: {
 			show: {
@@ -153,11 +149,9 @@ export const searchDescription: INodeProperties[] = [
 			},
 		},
 		description:
-			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+			'Choose from the list, or specify IDs using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 		typeOptions: {
 			loadOptionsMethod: 'getGroups',
-			multipleValues: true,
-			multipleValueButtonText: 'Add Group',
 		},
 		routing: {
 			send: {
