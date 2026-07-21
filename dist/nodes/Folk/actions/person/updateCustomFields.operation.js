@@ -7,6 +7,43 @@ const displayOptions = {
         operation: ['updateCustomFields'],
     },
 };
+function isIdObject(value) {
+    return typeof value === 'object' && value !== null && typeof value.id === 'string';
+}
+function normalizeContactFieldValue(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => {
+            if (isIdObject(item)) {
+                return { id: item.id };
+            }
+            if (typeof item === 'string' && item.length > 0) {
+                return { id: item };
+            }
+            return item;
+        })
+            .filter((item) => isIdObject(item));
+    }
+    if (isIdObject(value)) {
+        return { id: value.id };
+    }
+    if (typeof value === 'string' && value.length > 0) {
+        return [{ id: value }];
+    }
+    return value;
+}
+async function getContactFieldNames(groupId) {
+    var _a, _b;
+    const response = (await this.helpers.httpRequestWithAuthentication.call(this, 'folkApi', {
+        method: 'GET',
+        url: `https://api.folk.app/v1/groups/${groupId}/custom-fields/person`,
+        qs: { limit: 100 },
+    }));
+    const fields = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.items) !== null && _b !== void 0 ? _b : [];
+    return new Set(fields
+        .filter((field) => field.type === 'contactField')
+        .map((field) => field.name));
+}
 async function mergeCustomFieldValues(requestOptions) {
     var _a, _b, _c, _d, _e;
     const personId = this.getNodeParameter('personId');
@@ -19,9 +56,12 @@ async function mergeCustomFieldValues(requestOptions) {
     const existingCustomFieldValues = (_b = (_a = response.data) === null || _a === void 0 ? void 0 : _a.customFieldValues) !== null && _b !== void 0 ? _b : {};
     const existingGroupValues = ((_c = existingCustomFieldValues[groupId]) !== null && _c !== void 0 ? _c : {});
     const updatedGroupValues = { ...existingGroupValues };
+    const contactFieldNames = await getContactFieldNames.call(this, groupId);
     for (const field of (_d = customFieldUpdates.fieldValues) !== null && _d !== void 0 ? _d : []) {
         if (field.fieldName) {
-            updatedGroupValues[field.fieldName] = field.value;
+            updatedGroupValues[field.fieldName] = contactFieldNames.has(field.fieldName)
+                ? normalizeContactFieldValue(field.value)
+                : field.value;
         }
     }
     const body = ((_e = requestOptions.body) !== null && _e !== void 0 ? _e : {});
