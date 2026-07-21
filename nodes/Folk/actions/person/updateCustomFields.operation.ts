@@ -18,6 +18,71 @@ interface FolkPersonResponse {
 	};
 }
 
+interface FolkCustomField {
+	name: string;
+	type?: string;
+}
+
+interface FolkCustomFieldsResponse {
+	data?: {
+		items?: FolkCustomField[];
+	};
+}
+
+function isIdObject(value: unknown): value is IDataObject {
+	return typeof value === 'object' && value !== null && typeof (value as IDataObject).id === 'string';
+}
+
+function normalizeContactFieldValue(value: unknown): unknown {
+	if (Array.isArray(value)) {
+		return value
+			.map((item) => {
+				if (isIdObject(item)) {
+					return { id: item.id };
+				}
+
+				if (typeof item === 'string' && item.length > 0) {
+					return { id: item };
+				}
+
+				return item;
+			})
+			.filter((item): item is IDataObject => isIdObject(item));
+	}
+
+	if (isIdObject(value)) {
+		return { id: value.id };
+	}
+
+	if (typeof value === 'string' && value.length > 0) {
+		return [{ id: value }];
+	}
+
+	return value;
+}
+
+async function getContactFieldNames(
+	this: IExecuteSingleFunctions,
+	groupId: string,
+): Promise<Set<string>> {
+	const response = (await this.helpers.httpRequestWithAuthentication.call(
+		this,
+		'folkApi',
+		{
+			method: 'GET',
+			url: `https://api.folk.app/v1/groups/${groupId}/custom-fields/person`,
+			qs: { limit: 100 },
+		},
+	)) as FolkCustomFieldsResponse;
+	const fields = response.data?.items ?? [];
+
+	return new Set(
+		fields
+			.filter((field) => field.type === 'contactField')
+			.map((field) => field.name),
+	);
+}
+
 async function mergeCustomFieldValues(
 	this: IExecuteSingleFunctions,
 	requestOptions: IHttpRequestOptions,
@@ -38,10 +103,13 @@ async function mergeCustomFieldValues(
 	const existingCustomFieldValues = response.data?.customFieldValues ?? {};
 	const existingGroupValues = (existingCustomFieldValues[groupId] ?? {}) as IDataObject;
 	const updatedGroupValues: IDataObject = { ...existingGroupValues };
+	const contactFieldNames = await getContactFieldNames.call(this, groupId);
 
 	for (const field of customFieldUpdates.fieldValues ?? []) {
 		if (field.fieldName) {
-			updatedGroupValues[field.fieldName] = field.value as IDataObject[string];
+			updatedGroupValues[field.fieldName] = contactFieldNames.has(field.fieldName)
+				? (normalizeContactFieldValue(field.value) as IDataObject[string])
+				: (field.value as IDataObject[string]);
 		}
 	}
 
