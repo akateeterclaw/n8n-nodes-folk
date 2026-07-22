@@ -113,6 +113,14 @@ async function mergeCustomFieldValues(
 		}
 	}
 
+	for (const fieldName of contactFieldNames) {
+		if (fieldName in updatedGroupValues) {
+			updatedGroupValues[fieldName] = normalizeContactFieldValue(
+				updatedGroupValues[fieldName],
+			) as IDataObject[string];
+		}
+	}
+
 	const body = (requestOptions.body ?? {}) as IDataObject;
 	body.customFieldValues = {
 		...existingCustomFieldValues,
